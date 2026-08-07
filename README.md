@@ -4,7 +4,22 @@ A single-file interactive scenario for an introductory financial accounting cour
 Students run a small retailer for four quarters and learn — by playing — why
 **net income and cash are not the same thing**.
 
-## What changed from the original draft
+## Status
+
+**Live and in use.** The game is at
+<https://sternlsl.github.io/cash-and-carry/>, with the leaderboard API on
+Railway and Google sign-in verified end to end against a real NYU account.
+
+Current board: `fall-2026`. Allowed sign-in domain: `nyu.edu`.
+
+Jump to [Architecture](#architecture) for how the two halves fit together, or
+[Running a new term](#running-a-new-term) for the per-term checklist.
+
+## Design notes
+
+Why the simulation is tuned the way it is. "The original" below refers to the
+first draft of the scenario, kept here because the reasoning still explains most
+of the numbers in `index.html`.
 
 **Economic rebalance (v2)** — tuned via Monte Carlo (30k games/strategy) so solvency
 is a real constraint, not a theoretical one:
@@ -60,19 +75,30 @@ is a real constraint, not a theoretical one:
 - NYU violet (#57068C) chrome, Public Sans, quarter progress stepper, mobile
   responsive, accessible chart with a table view.
 
-## Deploying
+## Architecture
 
-The game is still one static file — `index.html`, no build step — served from
-**GitHub Pages**. Settings → Pages → deploy from `main`, root.
+This is a **split deployment**, which is the one thing to understand before
+changing anything:
 
-The leaderboard is now backed by a small API in [`server/`](server/) running on
-**Railway** (Node + Postgres), so an entire class shares one board instead of one
-board per browser. See [`server/README.md`](server/README.md) for the deploy
-steps and environment variables.
+| Piece | Where | What it does |
+| --- | --- | --- |
+| `index.html` | GitHub Pages, from `main` | The entire game — one static file, no build step |
+| [`server/`](server/) | Railway (Node + Postgres) | Leaderboard API only; never serves the page |
+
+The browser calls Railway directly. The two halves are joined by nothing but the
+`API_BASE` URL in the page and `ALLOWED_ORIGINS` on the server — if either is
+wrong, the board silently falls back to per-device scores. See
+[`server/README.md`](server/README.md) for deploy steps and environment
+variables.
+
+**Pages builds from `main`.** A config change on a feature branch will not go
+live, however green the branch looks.
+
+## Configuration
 
 Students sign in with their NYU Google account, so each student appears once and
-under a consistent identity. To connect the page to the backend, set three
-constants near the top of the script block in `index.html`:
+under a consistent identity. Three constants near the top of the script block in
+`index.html` control the wiring:
 
 ```js
 const API_BASE='https://your-service.up.railway.app';        // no trailing slash
@@ -92,16 +118,34 @@ deleting last term's data.
 ### Sign-in
 
 Only Google Workspace accounts on an allowed domain are accepted, checked
-server-side on every request. The server's `ALLOWED_EMAIL_DOMAINS` defaults to
-`nyu.edu`; **if any students have `@stern.nyu.edu` addresses, add that domain
-explicitly** or they will be locked out. A personal account whose address merely
-ends in `@nyu.edu` is refused — see [`server/README.md`](server/README.md) for
-why that distinction holds.
+server-side on every request. `ALLOWED_EMAIL_DOMAINS` is currently `nyu.edu`
+only; **if any students have `@stern.nyu.edu` addresses, add that domain
+explicitly** or they will be locked out. This has not yet been confirmed against
+a real student roster. A personal account whose address merely ends in `@nyu.edu`
+is refused — see [`server/README.md`](server/README.md) for why that distinction
+holds.
 
 Sessions live in memory only. Closing the tab signs the student out, and nothing
 about their Google account is written to the device.
 
-### Three things to know
+## Running a new term
+
+1. Bump `BOARD_ID` in `index.html` (e.g. `spring-2027`) and push to `main`. The
+   new board is created on first write; the old one stays intact.
+2. Confirm the roster's email domains still match `ALLOWED_EMAIL_DOMAINS`.
+3. Drop boards you no longer need rather than letting student data accumulate.
+
+Before a class session, a quick health check:
+
+```bash
+curl -s https://magnificent-determination-production-f393.up.railway.app/api/health
+```
+
+`{"ok":true,"auth":true,"domains":["nyu.edu"]}` means the API and database are
+up. If the page ever shows per-device scores instead of the class board, that is
+the first thing to check — the game degrades quietly by design.
+
+## Three things to know
 
 - **Resetting the board is instructor-only.** Against a shared backend the reset
   button would otherwise let any student wipe the class from their laptop. An

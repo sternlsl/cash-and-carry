@@ -58,7 +58,7 @@ reason.
 | `GOOGLE_CLIENT_ID` | yes | OAuth 2.0 **Web application** client ID. Without it every score request is refused |
 | `ALLOWED_ORIGINS` | yes | Comma-separated. The GitHub Pages origin: `https://sternlsl.github.io`. Origin only — no path, no trailing slash |
 | `ALLOWED_EMAIL_DOMAINS` | no | Comma-separated, defaults to `nyu.edu`. Add subdomains explicitly if students have them, e.g. `nyu.edu,stern.nyu.edu` |
-| `ADMIN_EMAILS` | no | Comma-separated instructor addresses allowed to reset a board by signing in |
+| `ADMIN_EMAILS` | no | Comma-separated instructor addresses allowed to reset a board by signing in. **Must be on an allowed domain** — see below |
 | `ADMIN_TOKEN` | no | Shared secret alternative for reset. Set at least one of this or `ADMIN_EMAILS`, or reset is disabled |
 | `DATABASE_SSL` | no | Set `true` only if pointing at a public Postgres URL |
 | `PORT` | no | Railway injects this |
@@ -66,6 +66,15 @@ reason.
 The OAuth **client secret is not needed** and should not be set here. This flow
 verifies ID tokens minted in the browser; there is no authorization-code
 exchange, which also means no cross-site session cookies to fight with.
+
+### `ADMIN_EMAILS` has to be a school address
+
+The reset route verifies the Google token *before* it checks the admin list, and
+that verification enforces `ALLOWED_EMAIL_DOMAINS`. An instructor address on a
+domain that is not allowed — a personal gmail.com account, say — is rejected a
+step earlier and never reaches the admin check, so it will appear to be ignored
+rather than to fail. Use the instructor's `@nyu.edu` account, or fall back to
+`ADMIN_TOKEN`.
 
 ## Google Cloud setup
 
@@ -88,21 +97,43 @@ exchange, which also means no cross-site session cookies to fight with.
 
 ## Deploying to Railway
 
+This is a split deployment: GitHub Pages serves the page, Railway runs only this
+API. Railway never serves `index.html`, and the two are joined by nothing but the
+`API_BASE` URL in the page plus `ALLOWED_ORIGINS` here.
+
 1. In your Railway project: **New → GitHub Repo →** this repo.
 2. Set the service's **Root Directory** to `server`, so Railway builds this
-   folder and not the static page. Start command is `npm start`.
-3. **New → Database → Postgres** in the same project.
-4. On the API service, add a variable referencing the database:
+   folder and not the static page. Start command is `npm start`. Without this,
+   the build fails: the repo root has no `package.json`.
+3. Set **Watch Paths** to `server/**` on the same settings page, so pushes that
+   only touch `index.html` do not trigger a pointless API redeploy.
+4. **New → Database → Postgres** in the same project.
+5. On the API service, add a variable referencing the database:
    `DATABASE_URL = ${{Postgres.DATABASE_URL}}`. The reference form keeps traffic
    on Railway's private network, which is why `DATABASE_SSL` stays unset.
-5. Add `GOOGLE_CLIENT_ID`, `ALLOWED_ORIGINS`, and `ADMIN_EMAILS` (or
+6. Add `GOOGLE_CLIENT_ID`, `ALLOWED_ORIGINS`, and `ADMIN_EMAILS` (or
    `ADMIN_TOKEN`).
-6. **Settings → Networking → Generate Domain**, and copy the URL.
-7. Put that URL in `API_BASE` in `../index.html`, along with the client ID, and
-   push. Pages redeploys and the board goes live.
+7. **Settings → Networking → Generate Domain**, and copy the URL.
+8. Put that URL in `API_BASE` in `../index.html`, along with the client ID, and
+   push **to `main`** — Pages builds from `main`, so a config change sitting on a
+   feature branch will not go live.
 
 The table is created on boot, so there is no migration step. `schema.sql` is the
 same DDL if you would rather apply it yourself.
+
+Verify the service before wiring the page to it:
+
+```bash
+curl -s https://YOUR-SERVICE.up.railway.app/api/health
+```
+
+`{"ok":true,"auth":true,"domains":["nyu.edu"]}` means Postgres connected and the
+client ID registered. A `/api/scores` call without a token should return a 401 —
+that is the system working, not a fault.
+
+If Postgres will not connect, it is usually Railway's private network being
+IPv6-only. Switch `DATABASE_URL` to `${{Postgres.DATABASE_PUBLIC_URL}}` and set
+`DATABASE_SSL=true`.
 
 ## Running locally
 
