@@ -70,26 +70,47 @@ The leaderboard is now backed by a small API in [`server/`](server/) running on
 board per browser. See [`server/README.md`](server/README.md) for the deploy
 steps and environment variables.
 
-To connect the page to the backend, set two constants near the top of the script
-block in `index.html`:
+Students sign in with their NYU Google account, so each student appears once and
+under a consistent identity. To connect the page to the backend, set three
+constants near the top of the script block in `index.html`:
 
 ```js
-const API_BASE='https://your-service.up.railway.app';  // no trailing slash
-const BOARD_ID='fall-2026';                            // bump each term
+const API_BASE='https://your-service.up.railway.app';        // no trailing slash
+const BOARD_ID='fall-2026';                                  // bump each term
+const GOOGLE_CLIENT_ID='xxxx.apps.googleusercontent.com';    // public, safe to commit
 ```
 
-Leaving `API_BASE` empty runs the game fully offline, with the board falling back
-to this browser's `localStorage` — the original behaviour. That fallback is also
-what students see if the backend is unreachable mid-class: the page keeps working
-and says so, rather than showing an empty leaderboard.
+Leaving `API_BASE` empty runs the game fully offline: no sign-in, no Google
+script loaded at all, and the board falls back to this browser's `localStorage` —
+the original behaviour. That fallback is also what students see if the backend is
+unreachable mid-class: the page keeps working and says so, rather than showing an
+empty leaderboard.
 
 `BOARD_ID` separates cohorts. Bumping it each term starts a clean board without
 deleting last term's data.
 
-### Two things to know
+### Sign-in
+
+Only Google Workspace accounts on an allowed domain are accepted, checked
+server-side on every request. The server's `ALLOWED_EMAIL_DOMAINS` defaults to
+`nyu.edu`; **if any students have `@stern.nyu.edu` addresses, add that domain
+explicitly** or they will be locked out. A personal account whose address merely
+ends in `@nyu.edu` is refused — see [`server/README.md`](server/README.md) for
+why that distinction holds.
+
+Sessions live in memory only. Closing the tab signs the student out, and nothing
+about their Google account is written to the device.
+
+### Three things to know
 
 - **Resetting the board is instructor-only.** Against a shared backend the reset
-  button would otherwise let any student wipe the class from their laptop, so it
-  prompts for the admin token set on the server.
-- **Scores are computed in the browser and can be faked** by anyone who opens
-  devtools. Fine for a discussion prop; don't grade off it.
+  button would otherwise let any student wipe the class from their laptop. An
+  instructor on the server's `ADMIN_EMAILS` list can reset by signing in; there
+  is also a shared `ADMIN_TOKEN` fallback.
+- **Sign-in proves identity, not honesty.** Scores are still computed in the
+  browser and a determined student can post a number they did not earn — but it
+  is now attributable to a verified account rather than anonymous. Fine as a
+  discussion prop; don't grade off it.
+- **The board is student data now.** It ties school email addresses to
+  performance, so reading it requires sign-in, responses never include emails,
+  and old boards should be dropped rather than left to accumulate.

@@ -259,6 +259,11 @@ details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
 .lb-score{font-size:13.5px;font-weight:700;min-width:64px;text-align:right}
 .lb-status{font-size:11.5px;color:var(--ink-3);margin-top:.6rem;line-height:1.5}
 .lb-status.warn{color:var(--ink-2)}
+.signin-lead{font-size:13.5px;color:var(--ink-2);line-height:1.5;margin-bottom:.8rem}
+.signin-note{font-size:11.5px;color:var(--ink-3);margin-top:.7rem;line-height:1.5;min-height:1em}
+.signin-note.err{color:var(--neg)}
+.signin-who{font-size:11.5px;color:var(--ink-3);margin-bottom:.6rem}
+#gsi-button{display:flex;justify-content:center;min-height:44px}
 .lb-badge{font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:5px;background:var(--page);color:var(--ink-2)}
 .lb-badge.bust{background:var(--neg-tint);color:var(--neg)}
 .lb-badge.win{background:var(--warn-tint);color:var(--gold)}
@@ -308,8 +313,16 @@ details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
   <div class="cols">
   <div class="col">
   <div class="card name-panel">
-    <input class="name-input" id="player-name" type="text" placeholder="Enter your name" maxlength="20" autocomplete="off" aria-label="Your name">
-    <button class="btn btn-primary" id="btn-start" disabled>Start the challenge</button>
+    <div id="signin-panel" style="display:none">
+      <p class="signin-lead">Sign in with your NYU Google account to join the class leaderboard.</p>
+      <div id="gsi-button"></div>
+      <p class="signin-note" id="signin-note"></p>
+    </div>
+    <div id="play-panel">
+      <p class="signin-who" id="signin-who" style="display:none"></p>
+      <input class="name-input" id="player-name" type="text" placeholder="Enter your name" maxlength="20" autocomplete="off" aria-label="Your name">
+      <button class="btn btn-primary" id="btn-start" disabled>Start the challenge</button>
+    </div>
   </div>
 
   <div class="rules-head"><span class="kicker">The setup</span></div>
@@ -583,6 +596,15 @@ const API_BASE='';
 const BOARD_ID='fall-2026';
 const ONLINE=!!API_BASE;
 
+/* Google sign-in. GOOGLE_CLIENT_ID is the OAuth 2.0 Web client ID from the
+   Google Cloud console — it is a public identifier, not a secret, and the
+   matching client secret is never needed for this flow. The server verifies
+   every token against Google's keys and enforces the domain, so nothing here
+   is load-bearing for security. */
+const GOOGLE_CLIENT_ID='';
+const SCHOOL_DOMAIN='nyu.edu';
+const AUTH_ON=ONLINE&&!!GOOGLE_CLIENT_ID;
+
 /* Forecast tiers: the range is public, the actual draw is hidden until results.
    Tuned via Monte Carlo so the affordability cap binds in ~1-3 quarters per game
    and the Q4 surge exceeds what unleveraged cash can stock. */
@@ -636,6 +658,108 @@ function starHTML(n){
   for(let i=0;i<QUARTERS;i++)h+=i<n?'★':'<span class="off">★</span>';
   return h;
 }
+
+/* ================= sign-in =================
+   The ID token is held in memory only: closing the tab signs you out, and
+   nothing about the student's Google account is written to this device. */
+let idToken=null, account=null, pendingScore=null;
+
+function signinNote(msg,isErr){
+  const el=$('signin-note');
+  if(!el)return;
+  el.textContent=msg||'';
+  el.className='signin-note'+(isErr?' err':'');
+}
+
+function showSignedIn(){
+  $('signin-panel').style.display='none';
+  $('play-panel').style.display='';
+  const who=$('signin-who');
+  who.style.display='';
+  who.textContent='Signed in as '+account.email;
+  const nameEl=$('player-name');
+  if(!nameEl.value.trim()&&account.given){
+    nameEl.value=account.given.slice(0,20);
+    $('btn-start').disabled=nameEl.value.trim().length<2;
+  }
+  nameEl.focus();
+}
+
+function showSignedOut(msg,isErr){
+  $('signin-panel').style.display='';
+  $('play-panel').style.display='none';
+  $('signin-who').style.display='none';
+  signinNote(msg,isErr);
+}
+
+/* Google hands back a signed JWT. We read the email out of it purely to label
+   the UI — the server re-verifies the signature and re-checks the domain, and
+   nothing is trusted on the strength of this decode. */
+function readToken(jwt){
+  try{
+    const part=jwt.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+    const json=decodeURIComponent(atob(part).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+    const p=JSON.parse(json);
+    return {email:(p.email||'').toLowerCase(),given:(p.given_name||p.name||'').trim(),exp:p.exp||0};
+  }catch(e){ return null; }
+}
+
+function onCredential(resp){
+  const parsed=resp&&resp.credential?readToken(resp.credential):null;
+  if(!parsed){ showSignedOut('That sign-in could not be read. Please try again.',true); return; }
+  const domain=parsed.email.split('@')[1]||'';
+  // A courtesy check so the wrong-account case is caught instantly. The server
+  // enforces the same rule and is what actually matters.
+  if(domain!==SCHOOL_DOMAIN&&!domain.endsWith('.'+SCHOOL_DOMAIN)){
+    showSignedOut('That is a '+(domain?'@'+domain:'personal')+' account. Please sign in with your @'+SCHOOL_DOMAIN+' school account.',true);
+    return;
+  }
+  idToken=resp.credential;
+  account=parsed;
+  showSignedIn();
+  // A run finished while the session was expired — post it now.
+  if(pendingScore){
+    const entry=pendingScore; pendingScore=null;
+    postScore(entry).then(()=>refreshBoard()).catch(()=>{});
+  }
+}
+
+function initAuth(){
+  if(!AUTH_ON){ $('signin-panel').style.display='none'; $('play-panel').style.display=''; return; }
+  showSignedOut('');
+  const s=document.createElement('script');
+  s.src='https://accounts.google.com/gsi/client';
+  s.async=true; s.defer=true;
+  s.onerror=()=>showSignedOut('Google sign-in could not be loaded. Check your connection and reload.',true);
+  s.onload=()=>{
+    try{
+      google.accounts.id.initialize({
+        client_id:GOOGLE_CLIENT_ID,
+        callback:onCredential,
+        hd:SCHOOL_DOMAIN,
+        auto_select:true,
+        cancel_on_tap_outside:false
+      });
+      google.accounts.id.renderButton($('gsi-button'),{theme:'outline',size:'large',text:'signin_with',shape:'pill'});
+    }catch(e){
+      showSignedOut('Google sign-in failed to start: '+e.message,true);
+    }
+  };
+  document.head.appendChild(s);
+}
+
+/* Called when the server rejects our token. Drops the session and puts the
+   sign-in button back so the student can recover without losing their game. */
+function signedOutByServer(){
+  idToken=null; account=null;
+  showScreen('intro');
+  showSignedOut('Your sign-in expired. Sign in again to post your score.',true);
+  if(AUTH_ON&&window.google&&google.accounts&&google.accounts.id){
+    try{ google.accounts.id.renderButton($('gsi-button'),{theme:'outline',size:'large',text:'signin_with',shape:'pill'}); }catch(e){}
+  }
+}
+
+initAuth();
 
 /* ================= intro ================= */
 $('player-name').addEventListener('input',function(){ $('btn-start').disabled=this.value.trim().length<2; });
@@ -1113,21 +1237,40 @@ function saveScore(){
   sortBoard(leaderboard);
   cacheBoard();
   if(!ONLINE)return;
-  postScore({name:S.name,ni:S.cumNI,cash:S.cash,stars:S.stars,bust:S.bust})
+  const entry={name:S.name,ni:S.cumNI,cash:S.cash,stars:S.stars,bust:S.bust};
+  postScore(entry)
     .then(()=>refreshBoard())
     .catch(err=>{
       console.warn('leaderboard save failed',err);
-      setStatus('Your score is saved on this device, but the class board could not be reached — this run may not appear for the rest of the class.',true);
+      if(err.status===401){
+        // Session died mid-game. Hold the run and post it once they sign back in.
+        pendingScore=entry;
+        setStatus('Your score is saved on this device. Sign in again to post it to the class board.',true);
+        signedOutByServer();
+        return;
+      }
+      setStatus(err.status===403
+        ? err.message
+        : 'Your score is saved on this device, but the class board could not be reached — this run may not appear for the rest of the class.',true);
     });
 }
 
 function apiFetch(path,opts){
+  opts=opts||{};
   const ctl=new AbortController();
   const timer=setTimeout(()=>ctl.abort(),8000);
-  return fetch(API_BASE+path,Object.assign({signal:ctl.signal},opts))
+  const headers=Object.assign({},opts.headers);
+  // Every score request carries the Google ID token unless a caller supplied
+  // its own credentials (the instructor reset can pass an admin token instead).
+  if(AUTH_ON&&idToken&&!headers.Authorization)headers.Authorization='Bearer '+idToken;
+  return fetch(API_BASE+path,Object.assign({},opts,{signal:ctl.signal,headers}))
     .then(async r=>{
       const data=await r.json().catch(()=>({}));
-      if(!r.ok)throw new Error(data.error||('HTTP '+r.status));
+      if(!r.ok){
+        const err=new Error(data.error||('HTTP '+r.status));
+        err.status=r.status;
+        throw err;
+      }
       return data;
     })
     .finally(()=>clearTimeout(timer));
@@ -1146,6 +1289,11 @@ function postScore(entry){
    empty leaderboard. */
 function refreshBoard(){
   if(!ONLINE){setStatus('Scores are saved on this device only.');return Promise.resolve();}
+  if(AUTH_ON&&!idToken){
+    renderBoard();
+    setStatus('Sign in with your @'+SCHOOL_DOMAIN+' account to see the class board.',true);
+    return Promise.resolve();
+  }
   setStatus('Loading class scores…');
   return apiFetch('/api/scores?board='+encodeURIComponent(BOARD_ID)+'&limit=100')
     .then(data=>{
@@ -1159,7 +1307,11 @@ function refreshBoard(){
     .catch(err=>{
       console.warn('leaderboard load failed',err);
       renderBoard();
-      setStatus('Showing scores saved on this device — the class board is unreachable right now.',true);
+      // Distinguish "we could not reach the server" from "the server would not
+      // accept you" — the fixes are different and one is actionable.
+      if(err.status===401)      setStatus('Sign in again to see the class board.',true);
+      else if(err.status===403) setStatus(err.message,true);
+      else setStatus('Showing scores saved on this device — the class board is unreachable right now.',true);
     });
 }
 
@@ -1282,7 +1434,9 @@ function renderBoard(){
   const list=$('lb-list');
   if(!leaderboard.length){list.innerHTML='<p style="font-size:13px;color:var(--ink-3)">No scores yet.</p>';return;}
   list.innerHTML=leaderboard.map((e,i)=>{
-    const you=S&&e.name===S.name;
+    // Online the server flags your own row by Google account, so two students
+    // sharing a display name are still told apart. Offline, name is all we have.
+    const you=('you' in e)?!!e.you:(S&&e.name===S.name);
     const first=i===0&&!e.bust;
     return `<div class="lb-row${first?' first':''}${you?' you':''}">
       <span class="lb-rank${first?' gold':''}">${first?'★':i+1}</span>
@@ -1312,18 +1466,26 @@ $('btn-clear').addEventListener('click',()=>{
     setStatus('Scores are saved on this device only.');
     return;
   }
-  const token=prompt('Instructor only.\n\nThis erases the "'+BOARD_ID+'" board for the entire class and cannot be undone.\n\nEnter the admin token to confirm:');
-  if(!token)return;
+  if(!confirm('Instructor only.\n\nThis erases the "'+BOARD_ID+'" board for the entire class and cannot be undone.\n\nContinue?'))return;
   setStatus('Resetting the class board…');
-  apiFetch('/api/scores?board='+encodeURIComponent(BOARD_ID),{
-    method:'DELETE',
-    headers:{'Authorization':'Bearer '+token.trim()}
-  })
-    .then(()=>{
-      try{localStorage.removeItem(LB_KEY);}catch(e){}
-      return refreshBoard();
-    })
-    .catch(err=>setStatus('Reset failed: '+err.message,true));
+  const wipe=()=>{
+    try{localStorage.removeItem(LB_KEY);}catch(e){}
+    return refreshBoard();
+  };
+  // Try the signed-in identity first: an instructor on the server's ADMIN_EMAILS
+  // list never needs to handle a shared secret. Fall back to the admin token.
+  apiFetch('/api/scores?board='+encodeURIComponent(BOARD_ID),{method:'DELETE'})
+    .then(wipe)
+    .catch(()=>{
+      const token=prompt('That account is not on the instructor list.\n\nEnter the admin token to reset the board:');
+      if(!token){setStatus('Reset cancelled.');return;}
+      return apiFetch('/api/scores?board='+encodeURIComponent(BOARD_ID),{
+        method:'DELETE',
+        headers:{'Authorization':'Bearer '+token.trim()}
+      })
+        .then(wipe)
+        .catch(err=>setStatus('Reset failed: '+err.message,true));
+    });
 });
 </script>
 </body>
