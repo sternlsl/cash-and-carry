@@ -60,13 +60,36 @@ is a real constraint, not a theoretical one:
 - NYU violet (#57068C) chrome, Public Sans, quarter progress stepper, mobile
   responsive, accessible chart with a table view.
 
-## Deploying to Netlify
+## Deploying
 
-Everything is one static file — `index.html` — with no build step.
+The game is still one static file — `index.html`, no build step — served from
+**GitHub Pages**. Settings → Pages → deploy from `main`, root.
 
-- **Drag & drop:** zip or drag this folder onto https://app.netlify.com/drop
-- **CLI:** `netlify deploy --prod --dir .`
+The leaderboard is now backed by a small API in [`server/`](server/) running on
+**Railway** (Node + Postgres), so an entire class shares one board instead of one
+board per browser. See [`server/README.md`](server/README.md) for the deploy
+steps and environment variables.
 
-The leaderboard is stored in the browser's `localStorage`, so it is per-device
-(e.g., per lab machine or per student laptop). Clearing it is available on the
-final screen.
+To connect the page to the backend, set two constants near the top of the script
+block in `index.html`:
+
+```js
+const API_BASE='https://your-service.up.railway.app';  // no trailing slash
+const BOARD_ID='fall-2026';                            // bump each term
+```
+
+Leaving `API_BASE` empty runs the game fully offline, with the board falling back
+to this browser's `localStorage` — the original behaviour. That fallback is also
+what students see if the backend is unreachable mid-class: the page keeps working
+and says so, rather than showing an empty leaderboard.
+
+`BOARD_ID` separates cohorts. Bumping it each term starts a clean board without
+deleting last term's data.
+
+### Two things to know
+
+- **Resetting the board is instructor-only.** Against a shared backend the reset
+  button would otherwise let any student wipe the class from their laptop, so it
+  prompts for the admin token set on the server.
+- **Scores are computed in the browser and can be faked** by anyone who opens
+  devtools. Fine for a discussion prop; don't grade off it.

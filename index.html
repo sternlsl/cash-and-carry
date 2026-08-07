@@ -257,6 +257,8 @@ details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
 .lb-name .you-tag{font-weight:400;color:var(--ink-3)}
 .lb-stars{font-size:12px}
 .lb-score{font-size:13.5px;font-weight:700;min-width:64px;text-align:right}
+.lb-status{font-size:11.5px;color:var(--ink-3);margin-top:.6rem;line-height:1.5}
+.lb-status.warn{color:var(--ink-2)}
 .lb-badge{font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:5px;background:var(--page);color:var(--ink-2)}
 .lb-badge.bust{background:var(--neg-tint);color:var(--neg)}
 .lb-badge.win{background:var(--warn-tint);color:var(--gold)}
@@ -543,6 +545,7 @@ details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
   <div class="card lb-card">
     <h3>Class leaderboard</h3>
     <div id="lb-list"></div>
+    <p class="lb-status" id="lb-status"></p>
   </div>
 
   <div class="card discuss">
@@ -568,6 +571,18 @@ details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
 const SELL=30, COST=20, LATE_FEE=2, OPEX=40, START_CASH=200, CREDIT_MULT=1.5, QUARTERS=4;
 const LB_KEY='scc_leaderboard_v3';
 
+/* ================= leaderboard backend =================
+   API_BASE points at the Railway service (no trailing slash), e.g.
+   'https://cash-and-carry-leaderboard.up.railway.app'. Leave it empty to run
+   fully offline — the board then falls back to this browser's localStorage,
+   which is exactly how the game behaved before the backend existed.
+
+   BOARD_ID separates cohorts. Bump it each term (or per section) so a new
+   class starts on a clean board without deleting last term's data. */
+const API_BASE='';
+const BOARD_ID='fall-2026';
+const ONLINE=!!API_BASE;
+
 /* Forecast tiers: the range is public, the actual draw is hidden until results.
    Tuned via Monte Carlo so the affordability cap binds in ~1-3 quarters per game
    and the Q4 surge exceeds what unleveraged cash can stock. */
@@ -580,6 +595,8 @@ const TIERS=[
 
 /* ================= state ================= */
 let S=null;
+// Seeded from localStorage so the board renders instantly and still works if
+// the network is down; replaced by the server's copy once a fetch succeeds.
 let leaderboard=[];
 try{ leaderboard=JSON.parse(localStorage.getItem(LB_KEY)||'[]'); }catch(e){}
 
@@ -1074,11 +1091,76 @@ function renderClose(){
 $('btn-close-next').addEventListener('click',()=>renderFinal());
 
 /* ================= final ================= */
+const sortBoard=a=>a.sort((x,y)=>(x.bust-y.bust)||(y.ni-x.ni)||(y.cash-x.cash));
+
+function cacheBoard(){
+  try{localStorage.setItem(LB_KEY,JSON.stringify(leaderboard));}catch(e){}
+}
+
+function setStatus(msg,warn){
+  const el=$('lb-status');
+  if(!el)return;
+  el.textContent=msg||'';
+  el.className='lb-status'+(warn?' warn':'');
+}
+
+/* Records the finished run. Updates the local board immediately so the final
+   screen never waits on the network, then pushes to the server and adopts the
+   authoritative class board when it answers. */
 function saveScore(){
   leaderboard=leaderboard.filter(e=>e.name!==S.name);
   leaderboard.push({name:S.name,ni:S.cumNI,cash:S.cash,stars:S.stars,bust:S.bust});
-  leaderboard.sort((a,b)=>(a.bust-b.bust)||(b.ni-a.ni));
-  try{localStorage.setItem(LB_KEY,JSON.stringify(leaderboard));}catch(e){}
+  sortBoard(leaderboard);
+  cacheBoard();
+  if(!ONLINE)return;
+  postScore({name:S.name,ni:S.cumNI,cash:S.cash,stars:S.stars,bust:S.bust})
+    .then(()=>refreshBoard())
+    .catch(err=>{
+      console.warn('leaderboard save failed',err);
+      setStatus('Your score is saved on this device, but the class board could not be reached — this run may not appear for the rest of the class.',true);
+    });
+}
+
+function apiFetch(path,opts){
+  const ctl=new AbortController();
+  const timer=setTimeout(()=>ctl.abort(),8000);
+  return fetch(API_BASE+path,Object.assign({signal:ctl.signal},opts))
+    .then(async r=>{
+      const data=await r.json().catch(()=>({}));
+      if(!r.ok)throw new Error(data.error||('HTTP '+r.status));
+      return data;
+    })
+    .finally(()=>clearTimeout(timer));
+}
+
+function postScore(entry){
+  return apiFetch('/api/scores',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(Object.assign({board:BOARD_ID},entry))
+  });
+}
+
+/* Pulls the class board. On failure the locally cached board stays on screen,
+   so a dead backend degrades to the old per-device behaviour instead of an
+   empty leaderboard. */
+function refreshBoard(){
+  if(!ONLINE){setStatus('Scores are saved on this device only.');return Promise.resolve();}
+  setStatus('Loading class scores…');
+  return apiFetch('/api/scores?board='+encodeURIComponent(BOARD_ID)+'&limit=100')
+    .then(data=>{
+      leaderboard=sortBoard(data.scores||[]);
+      cacheBoard();
+      renderBoard();
+      setStatus(!leaderboard.length?'The class board is empty — be the first to finish a year.'
+        :leaderboard.length===1?'1 player on the class board.'
+        :leaderboard.length+' players on the class board.');
+    })
+    .catch(err=>{
+      console.warn('leaderboard load failed',err);
+      renderBoard();
+      setStatus('Showing scores saved on this device — the class board is unreachable right now.',true);
+    });
 }
 
 function renderFinal(){
@@ -1097,7 +1179,8 @@ function renderFinal(){
   $('fin-status').innerHTML=S.bust?'<span class="tneg">Bust 💥</span>':'<span class="tpos">Solvent ✓</span>';
   drawChart();
   buildBigIdea();
-  renderBoard();
+  renderBoard();      // cached board paints immediately…
+  refreshBoard();     // …then the class board replaces it when it arrives
 }
 
 function drawChart(){
@@ -1217,12 +1300,30 @@ $('btn-again').addEventListener('click',()=>{
   showScreen('intro');
   $('player-name').focus();
 });
+/* Offline this only clears one browser. Against a shared board it would wipe
+   the whole class from any student's laptop, so the server requires the
+   instructor's admin token. */
 $('btn-clear').addEventListener('click',()=>{
-  if(confirm('Reset the class leaderboard? This cannot be undone.')){
+  if(!ONLINE){
+    if(!confirm('Clear the scores saved on this device? This cannot be undone.'))return;
     leaderboard=[];
     try{localStorage.removeItem(LB_KEY);}catch(e){}
     renderBoard();
+    setStatus('Scores are saved on this device only.');
+    return;
   }
+  const token=prompt('Instructor only.\n\nThis erases the "'+BOARD_ID+'" board for the entire class and cannot be undone.\n\nEnter the admin token to confirm:');
+  if(!token)return;
+  setStatus('Resetting the class board…');
+  apiFetch('/api/scores?board='+encodeURIComponent(BOARD_ID),{
+    method:'DELETE',
+    headers:{'Authorization':'Bearer '+token.trim()}
+  })
+    .then(()=>{
+      try{localStorage.removeItem(LB_KEY);}catch(e){}
+      return refreshBoard();
+    })
+    .catch(err=>setStatus('Reset failed: '+err.message,true));
 });
 </script>
 </body>
