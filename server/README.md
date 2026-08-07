@@ -56,7 +56,7 @@ reason.
 | --- | --- | --- |
 | `DATABASE_URL` | yes | Railway sets this when you attach Postgres |
 | `GOOGLE_CLIENT_ID` | yes | OAuth 2.0 **Web application** client ID. Without it every score request is refused |
-| `ALLOWED_ORIGINS` | yes | Comma-separated. The GitHub Pages origin, e.g. `https://hughmackey-lsl.github.io`. Origin only — no path, no trailing slash |
+| `ALLOWED_ORIGINS` | yes | Comma-separated. The GitHub Pages origin: `https://sternlsl.github.io`. Origin only — no path, no trailing slash |
 | `ALLOWED_EMAIL_DOMAINS` | no | Comma-separated, defaults to `nyu.edu`. Add subdomains explicitly if students have them, e.g. `nyu.edu,stern.nyu.edu` |
 | `ADMIN_EMAILS` | no | Comma-separated instructor addresses allowed to reset a board by signing in |
 | `ADMIN_TOKEN` | no | Shared secret alternative for reset. Set at least one of this or `ADMIN_EMAILS`, or reset is disabled |
@@ -78,8 +78,9 @@ exchange, which also means no cross-site session cookies to fight with.
 3. **APIs & Services → Credentials → Create credentials → OAuth client ID →
    Web application.**
 4. Under **Authorized JavaScript origins**, add the exact origin serving the
-   page: `https://hughmackey-lsl.github.io`. Origin only — no path. Add
-   `http://localhost:4000` too if you want to test locally.
+   page: `https://sternlsl.github.io` — origin only, so no `/cash-and-carry`
+   path even though the site lives there. Add `http://localhost:4000` too if you
+   want to test locally.
    Leave **Authorized redirect URIs** empty; this flow does not use them.
 5. Copy the **Client ID** into `GOOGLE_CLIENT_ID` here and into
    `GOOGLE_CLIENT_ID` in `../index.html`. It is a public identifier, safe to
