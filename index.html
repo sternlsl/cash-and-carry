@@ -663,6 +663,17 @@ function starHTML(n){
    The ID token is held in memory only: closing the tab signs you out, and
    nothing about the student's Google account is written to this device. */
 let idToken=null, account=null, pendingScore=null;
+// Set from the server's reply, never assumed. Students must not see the reset
+// button; the server refuses them anyway, but a live-looking button that only
+// fails is worse than no button.
+let isAdmin=false;
+
+function applyAdminUI(){
+  const btn=$('btn-clear');
+  if(!btn)return;
+  // Offline the button only clears this browser, which is harmless and useful.
+  btn.style.display=(!ONLINE||isAdmin)?'':'none';
+}
 
 function signinNote(msg,isErr){
   const el=$('signin-note');
@@ -751,7 +762,7 @@ function initAuth(){
 /* Called when the server rejects our token. Drops the session and puts the
    sign-in button back so the student can recover without losing their game. */
 function signedOutByServer(){
-  idToken=null; account=null;
+  idToken=null; account=null; isAdmin=false; applyAdminUI();
   showScreen('intro');
   showSignedOut('Your sign-in expired. Sign in again to post your score.',true);
   if(AUTH_ON&&window.google&&google.accounts&&google.accounts.id){
@@ -760,6 +771,9 @@ function signedOutByServer(){
 }
 
 initAuth();
+// Hidden until the server confirms an instructor, so it never flashes visible
+// for a student while the board loads.
+applyAdminUI();
 
 /* ================= intro ================= */
 $('player-name').addEventListener('input',function(){ $('btn-start').disabled=this.value.trim().length<2; });
@@ -1298,6 +1312,8 @@ function refreshBoard(){
   return apiFetch('/api/scores?board='+encodeURIComponent(BOARD_ID)+'&limit=100')
     .then(data=>{
       leaderboard=sortBoard(data.scores||[]);
+      isAdmin=!!data.admin;
+      applyAdminUI();
       cacheBoard();
       renderBoard();
       setStatus(!leaderboard.length?'The class board is empty — be the first to finish a year.'
@@ -1454,9 +1470,9 @@ $('btn-again').addEventListener('click',()=>{
   showScreen('intro');
   $('player-name').focus();
 });
-/* Offline this only clears one browser. Against a shared board it would wipe
-   the whole class from any student's laptop, so the server requires the
-   instructor's admin token. */
+/* Offline this only clears one browser. Online the button is shown only to
+   instructors on the server's ADMIN_EMAILS list, and the server re-checks the
+   caller on every DELETE — hiding the button is the courtesy, not the control. */
 $('btn-clear').addEventListener('click',()=>{
   if(!ONLINE){
     if(!confirm('Clear the scores saved on this device? This cannot be undone.'))return;
@@ -1466,26 +1482,14 @@ $('btn-clear').addEventListener('click',()=>{
     setStatus('Scores are saved on this device only.');
     return;
   }
-  if(!confirm('Instructor only.\n\nThis erases the "'+BOARD_ID+'" board for the entire class and cannot be undone.\n\nContinue?'))return;
+  if(!confirm('This erases the "'+BOARD_ID+'" board for the entire class and cannot be undone.\n\nContinue?'))return;
   setStatus('Resetting the class board…');
-  const wipe=()=>{
-    try{localStorage.removeItem(LB_KEY);}catch(e){}
-    return refreshBoard();
-  };
-  // Try the signed-in identity first: an instructor on the server's ADMIN_EMAILS
-  // list never needs to handle a shared secret. Fall back to the admin token.
   apiFetch('/api/scores?board='+encodeURIComponent(BOARD_ID),{method:'DELETE'})
-    .then(wipe)
-    .catch(()=>{
-      const token=prompt('That account is not on the instructor list.\n\nEnter the admin token to reset the board:');
-      if(!token){setStatus('Reset cancelled.');return;}
-      return apiFetch('/api/scores?board='+encodeURIComponent(BOARD_ID),{
-        method:'DELETE',
-        headers:{'Authorization':'Bearer '+token.trim()}
-      })
-        .then(wipe)
-        .catch(err=>setStatus('Reset failed: '+err.message,true));
-    });
+    .then(()=>{
+      try{localStorage.removeItem(LB_KEY);}catch(e){}
+      return refreshBoard();
+    })
+    .catch(err=>setStatus('Reset failed: '+err.message,true));
 });
 </script>
 </body>

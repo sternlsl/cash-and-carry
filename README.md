@@ -118,12 +118,11 @@ deleting last term's data.
 ### Sign-in
 
 Only Google Workspace accounts on an allowed domain are accepted, checked
-server-side on every request. `ALLOWED_EMAIL_DOMAINS` is currently `nyu.edu`
-only; **if any students have `@stern.nyu.edu` addresses, add that domain
-explicitly** or they will be locked out. This has not yet been confirmed against
-a real student roster. A personal account whose address merely ends in `@nyu.edu`
-is refused — see [`server/README.md`](server/README.md) for why that distinction
-holds.
+server-side on every request. `ALLOWED_EMAIL_DOMAINS` is deliberately `nyu.edu`
+only. If a student ever turns up on a subdomain such as `@stern.nyu.edu` they
+will be refused, and the fix is to add it to that one variable on Railway. A
+personal account whose address merely ends in `@nyu.edu` is refused — see
+[`server/README.md`](server/README.md) for why that distinction holds.
 
 Sessions live in memory only. Closing the tab signs the student out, and nothing
 about their Google account is written to the device.
@@ -147,10 +146,15 @@ the first thing to check — the game degrades quietly by design.
 
 ## Three things to know
 
-- **Resetting the board is instructor-only.** Against a shared backend the reset
-  button would otherwise let any student wipe the class from their laptop. An
-  instructor on the server's `ADMIN_EMAILS` list can reset by signing in; there
-  is also a shared `ADMIN_TOKEN` fallback.
+- **Resetting the board is instructor-only.** The reset button is shown only to
+  accounts on the server's `ADMIN_EMAILS` list, and the server re-checks the
+  caller on every delete — hiding the button is the courtesy, not the control.
+  If you are an instructor and cannot see it, your address is not on that list.
+  `ADMIN_TOKEN` still works as a break-glass path from the command line:
+
+  ```bash
+  curl -X DELETE "$API_BASE/api/scores?board=fall-2026" -H "Authorization: Bearer $ADMIN_TOKEN"
+  ```
 - **Sign-in proves identity, not honesty.** Scores are still computed in the
   browser and a determined student can post a number they did not earn — but it
   is now attributable to a verified account rather than anonymous. Fine as a

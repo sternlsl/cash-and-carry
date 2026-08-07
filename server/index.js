@@ -233,7 +233,11 @@ async function getScores(url, student){
   );
   // Deliberately no email or google_sub in the response: students should not be
   // able to harvest their classmates' addresses from the leaderboard.
-  return { board, scores: rows };
+  //
+  // `admin` lets the page hide the reset button from students. It is a UI hint
+  // only — DELETE re-checks the caller independently, so forging this flag in
+  // the browser buys nothing.
+  return { board, admin: ADMIN_EMAILS.includes(student.email), scores: rows };
 }
 
 async function postScore(body, student){

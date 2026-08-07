@@ -37,7 +37,17 @@ and does worse keeps their best result. The response reports which happened:
 
 `GET` returns display names only. Emails and Google ids are deliberately not in
 the response, so students cannot harvest classmates' addresses from the board.
-Each row carries `you: true` for the caller's own entry.
+Each row carries `you: true` for the caller's own entry, and the response carries
+`admin: true` when the caller is on `ADMIN_EMAILS` — the page uses that to show
+or hide the reset button. It is a UI hint only: `DELETE` re-checks the caller
+independently, so forging the flag in the browser buys nothing.
+
+Because the button follows `ADMIN_EMAILS`, an instructor holding only
+`ADMIN_TOKEN` will not see it. That path still works from the command line:
+
+```bash
+curl -X DELETE "$API_BASE/api/scores?board=fall-2026" -H "Authorization: Bearer $ADMIN_TOKEN"
+```
 
 ## Who counts as a student
 
