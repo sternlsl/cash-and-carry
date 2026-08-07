@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stern Cash &amp; Carry — The Profit vs. Cash Challenge</title>
+<meta name="description" content="An interactive inventory game for NYU Stern accounting students: learn why net income and cash are not the same thing.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --violet:#57068C;        /* NYU violet — chrome & actions */
+  --violet-dk:#3D0566;
+  --violet-tint:#F4EDFA;
+  --violet-line:#DCC8EF;
+  --page:#F7F5FA;
+  --card:#FFFFFF;
+  --ink:#241C35;
+  --ink-2:#5C5470;
+  --ink-3:#8B8499;
+  --border:#E5E1EC;
+  --pos:#0B7A4B;--pos-tint:#E8F6EF;
+  --neg:#B42318;--neg-tint:#FBEDEB;
+  --warn:#92400E;--warn-tint:#FDF3E3;--warn-line:#F0C36C;
+  --gold:#A16207;--star:#F5B700;
+  --chart-ni:#7B2FBE;      /* validated series colors */
+  --chart-cash:#B45309;
+  --radius:12px;
+  --shadow:0 1px 2px rgba(36,28,53,.05),0 4px 14px rgba(36,28,53,.06);
+}
+html{background:var(--page)}
+body{
+  font-family:'Public Sans',system-ui,-apple-system,sans-serif;
+  color:var(--ink);min-height:100vh;font-size:15px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---------- header ---------- */
+.masthead{background:var(--violet);color:#fff;padding:.8rem 1.25rem}
+.masthead-inner{max-width:760px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.wordmark{display:flex;align-items:center;gap:.6rem;line-height:1}
+.wordmark .nyu{font-weight:800;font-size:17px;letter-spacing:.02em}
+.wordmark .div{width:1px;height:18px;background:rgba(255,255,255,.4)}
+.wordmark .school{font-weight:500;font-size:12px;letter-spacing:.22em;text-transform:uppercase;opacity:.9}
+.game-tag{font-size:12px;font-weight:600;letter-spacing:.05em;opacity:.9;white-space:nowrap}
+
+/* quarter stepper */
+.stepper{background:var(--violet-dk);padding:.55rem 1.25rem;display:none}
+.stepper.on{display:block}
+.stepper-inner{max-width:760px;margin:0 auto;display:flex;align-items:center;gap:.45rem}
+.step{flex:1;display:flex;align-items:center;gap:.45rem;color:rgba(255,255,255,.45);font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.step .bar{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.18)}
+.step.done{color:rgba(255,255,255,.75)}
+.step.done .bar{background:rgba(255,255,255,.55)}
+.step.now{color:#fff}
+.step.now .bar{background:#fff}
+
+/* ---------- layout ---------- */
+.wrap{max-width:760px;margin:0 auto;padding:1.5rem 1.25rem 4rem}
+.screen{display:none}
+.screen.active{display:block;animation:rise .35s ease}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* two-column shell: stacked on small screens, side-by-side on desktop */
+.cols{display:grid;gap:1rem;align-items:start}
+.cols>.col{min-width:0;display:grid;gap:0;align-content:start}
+@media(min-width:980px){
+  .wrap{max-width:1180px}
+  .masthead-inner,.stepper-inner{max-width:1140px}
+  .cols{grid-template-columns:1fr 1fr;gap:1.25rem}
+  .cols.wide-left{grid-template-columns:1.15fr .85fr}
+  .hero{padding:1.6rem 0 1.2rem}
+}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.kicker{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+
+/* ---------- intro ---------- */
+.hero{text-align:center;padding:2.2rem 0 1.6rem}
+.hero h1{font-size:clamp(30px,6vw,42px);font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.hero h1 .amp{color:var(--violet)}
+.hero .sub{margin-top:.5rem;font-size:15px;color:var(--ink-2);max-width:46ch;margin-left:auto;margin-right:auto}
+.name-panel{max-width:400px;margin:1.4rem auto 0;padding:1.25rem;text-align:center}
+.name-input{width:100%;padding:.75rem 1rem;font:inherit;font-size:15px;border:1.5px solid var(--border);border-radius:10px;text-align:center;outline:none;transition:border-color .15s}
+.name-input:focus{border-color:var(--violet);box-shadow:0 0 0 3px var(--violet-tint)}
+.btn{display:inline-block;border:none;cursor:pointer;font:inherit;font-weight:700;border-radius:10px;transition:background .15s,opacity .15s,transform .1s}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--violet);color:#fff;padding:.8rem 2.2rem;font-size:15px;margin-top:.9rem;width:100%}
+.btn-primary:hover{background:var(--violet-dk)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.rules-head{margin:2.1rem 0 .7rem;text-align:center}
+.rules-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem}
+.rule-card{padding:.85rem .95rem}
+.rule-card .rlabel{font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.2rem}
+.rule-card .rval{font-size:15px;font-weight:600}
+.ledger-rules{margin-top:1.6rem;padding:1.15rem 1.25rem;background:var(--violet-tint);border:1px solid var(--violet-line);border-radius:var(--radius)}
+.ledger-rules h3{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--violet);margin-bottom:.6rem}
+.ledger-rules ol{margin-left:1.15rem;font-size:13.5px;color:var(--ink);display:grid;gap:.35rem}
+.howto{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-top:1.4rem}
+.howto .hstep{padding:.85rem .9rem;text-align:left}
+.howto .hnum{width:22px;height:22px;border-radius:50%;background:var(--violet);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-bottom:.5rem}
+.howto .htitle{font-size:13px;font-weight:700;margin-bottom:.15rem}
+.howto .htext{font-size:12px;color:var(--ink-2);line-height:1.45}
+
+/* ---------- shared game chrome ---------- */
+.q-head{display:flex;align-items:baseline;justify-content:space-between;gap:.6rem;flex-wrap:wrap;margin-bottom:1rem}
+.q-title{font-size:24px;font-weight:800;letter-spacing:-.01em}
+.q-player{font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;margin-bottom:1rem}
+.stat{padding:.7rem .85rem}
+.stat .slabel{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.15rem}
+.stat .sval{font-size:18px;font-weight:700}
+.stat .ssub{font-size:11px;color:var(--ink-3);margin-top:1px}
+.sval.pos{color:var(--pos)}.sval.neg{color:var(--neg)}
+.stars{color:var(--star);letter-spacing:.05em}
+.stars .off{color:var(--border)}
+
+/* forecast */
+.forecast{padding:1rem 1.15rem;margin-bottom:1rem;background:var(--warn-tint);border:1px solid var(--warn-line);border-radius:var(--radius)}
+.forecast .kicker{color:var(--warn)}
+.forecast .fnum{font-size:26px;font-weight:800;color:var(--warn);margin:.15rem 0}
+.forecast .ftext{font-size:13px;color:var(--warn)}
+.forecast .fboost{font-size:12.5px;font-weight:600;color:var(--warn);margin-top:.3rem}
+
+.unlock{padding:.9rem 1.15rem;margin-bottom:1rem;background:var(--violet-tint);border:1px solid var(--violet-line);border-radius:var(--radius)}
+.unlock .kicker{color:var(--violet);margin-bottom:.3rem}
+.unlock p{font-size:13px;line-height:1.55}
+
+/* decision card */
+.decision{padding:1.15rem 1.25rem;margin-bottom:1rem}
+.decision h3{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.9rem}
+.order-row{display:flex;align-items:center;gap:.9rem}
+.order-row label{font-size:13.5px;font-weight:600;min-width:105px}
+.order-row input[type=range]{flex:1;accent-color:var(--violet);height:22px}
+.qty{display:flex;align-items:center;gap:.4rem}
+.qty button{width:30px;height:30px;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-size:16px;font-weight:700;color:var(--violet);cursor:pointer}
+.qty button:hover{border-color:var(--violet)}
+.qty .qval{min-width:44px;text-align:center;font-size:18px;font-weight:800}
+.order-cost{font-size:12.5px;color:var(--ink-2);margin:.35rem 0 0 115px}
+.toggles{margin-top:1rem;border-top:1px solid var(--border);padding-top:.35rem}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.65rem 0;border-bottom:1px solid var(--border)}
+.toggle-row:last-child{border-bottom:none}
+.tinfo{font-size:13.5px;font-weight:600}
+.tinfo .tsub{font-size:12px;font-weight:400;color:var(--ink-2);margin-top:2px;line-height:1.45}
+.toggle{position:relative;width:44px;height:25px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.toggle-ui{position:absolute;inset:0;background:#D4CFDE;border-radius:13px;cursor:pointer;transition:.18s}
+.toggle-ui:before{content:'';position:absolute;height:19px;width:19px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.18s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.toggle input:checked+.toggle-ui{background:var(--violet)}
+.toggle input:checked+.toggle-ui:before{transform:translateX(19px)}
+.toggle input:focus-visible+.toggle-ui{outline:2px solid var(--violet);outline-offset:2px}
+
+/* plan preview */
+.plan{margin-top:1rem;background:var(--page);border:1px solid var(--border);border-radius:10px;padding:.9rem 1rem}
+.plan h4{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.5rem}
+.plan .prow{display:flex;justify-content:space-between;gap:.75rem;font-size:13px;padding:.28rem 0;border-bottom:1px dashed var(--border)}
+.plan .prow:last-child{border-bottom:none}
+.scen-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:.7rem;background:#fff;border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+.scen-table th{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);text-align:right;padding:.5rem .7rem;background:var(--page);border-bottom:1px solid var(--border)}
+.scen-table th:first-child{text-align:left}
+.scen-table td{padding:.42rem .7rem;text-align:right;border-bottom:1px solid var(--border)}
+.scen-table td:first-child{text-align:left;color:var(--ink-2)}
+.scen-table tr:last-child td{border-bottom:none;font-weight:700}
+.risk{margin-top:.8rem;padding:.7rem .9rem;border-radius:8px;font-size:13px;line-height:1.5;font-weight:500}
+.risk.warn{background:var(--warn-tint);border:1px solid var(--warn-line);color:var(--warn)}
+.risk.stop{background:var(--neg-tint);border:1px solid #EDA29B;color:var(--neg)}
+.risk.ok{background:var(--pos-tint);border:1px solid #A6E3C5;color:var(--pos)}
+.btn-submit{width:100%;background:var(--violet);color:#fff;padding:.85rem;font-size:15px;margin-top:1rem}
+.btn-submit:hover{background:var(--violet-dk)}
+
+/* ---------- results ---------- */
+.reveal{padding:1.15rem 1.25rem;margin-bottom:1rem;text-align:center}
+.reveal .kicker{margin-bottom:.2rem}
+.reveal .rnum{font-size:38px;font-weight:800;color:var(--violet)}
+.reveal .rline{font-size:13.5px;color:var(--ink-2);max-width:52ch;margin:.35rem auto 0;line-height:1.5}
+.reveal .rline strong{color:var(--ink)}
+
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:1rem}
+.duo .half{padding:1rem 1.1rem;text-align:center}
+.duo .dlabel{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.2rem}
+.duo .dval{font-size:27px;font-weight:800}
+.duo .dsub{font-size:11.5px;color:var(--ink-3);margin-top:2px}
+.vs-note{text-align:center;font-size:13px;color:var(--ink-2);margin:-.3rem 0 1rem}
+
+/* insight check */
+.insight{padding:1.15rem 1.25rem;margin-bottom:1rem;border:1.5px solid var(--violet-line);background:linear-gradient(180deg,var(--violet-tint),#fff 65%)}
+.insight .kicker{color:var(--violet);margin-bottom:.4rem}
+.insight .iq{font-size:15px;font-weight:600;line-height:1.5;margin-bottom:.85rem}
+.opt{display:block;width:100%;text-align:left;font:inherit;font-size:13.5px;line-height:1.45;padding:.7rem .9rem;margin-bottom:.5rem;background:#fff;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:border-color .12s,background .12s}
+.opt:hover{border-color:var(--violet)}
+.opt:disabled{cursor:default}
+.opt.correct{border-color:var(--pos);background:var(--pos-tint)}
+.opt.wrong{border-color:var(--neg);background:var(--neg-tint)}
+.opt.dim{opacity:.55}
+.iverdict{font-size:14px;font-weight:700;margin:.6rem 0 .25rem}
+.iverdict.good{color:var(--pos)}.iverdict.bad{color:var(--neg)}
+.iexplain{font-size:13px;color:var(--ink-2);line-height:1.55}
+
+/* statements */
+.statements-wait{padding:2.2rem 1.5rem;text-align:center;color:var(--ink-3);font-size:13px;line-height:1.6;border-style:dashed;box-shadow:none;background:transparent}
+.statements{display:none}
+.statements.on{display:block;animation:rise .35s ease}
+.sec{margin-bottom:1rem}
+.sec h3{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.5rem}
+.fs{width:100%;border-collapse:collapse;font-size:13.5px;background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.fs td{padding:.45rem .85rem;border-bottom:1px solid var(--border)}
+.fs td.n{text-align:right}
+.fs tr:last-child td{border-bottom:none}
+.fs .tot td{font-weight:700;background:var(--page)}
+.fs .hd td{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);background:var(--page);padding-top:.55rem}
+.fs .sub td{color:var(--ink-2);font-size:12.5px}
+.fs .indent{padding-left:1.6rem}
+.tpos{color:var(--pos)}.tneg{color:var(--neg)}
+.tie{font-size:12px;color:var(--pos);font-weight:600;margin-top:.35rem}
+.bridge-note{padding:.85rem 1rem;background:var(--violet-tint);border:1px solid var(--violet-line);border-radius:10px;font-size:13px;line-height:1.55;margin-top:.6rem}
+.bridge-note strong{color:var(--violet)}
+
+.btn-next{background:var(--violet);color:#fff;padding:.85rem 2rem;font-size:15px}
+.btn-next:hover{background:var(--violet-dk)}
+
+/* bust */
+.bust{padding:2rem 1.5rem;text-align:center;background:var(--neg-tint);border:1.5px solid #EDA29B;border-radius:var(--radius);margin-bottom:1rem}
+.bust h2{font-size:26px;font-weight:800;color:var(--neg);margin-bottom:.4rem}
+.bust p{font-size:14px;color:var(--neg);line-height:1.6;max-width:52ch;margin:0 auto 1.1rem}
+
+/* ---------- final ---------- */
+.final-head{text-align:center;padding:1.4rem 0 1.1rem}
+.final-head h2{font-size:30px;font-weight:800;letter-spacing:-.01em}
+.final-head .sub{color:var(--ink-2);font-size:14px;margin-top:.25rem}
+.chart-card{padding:1.1rem 1.25rem;margin-bottom:1rem}
+.chart-card h3{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.legend{display:flex;gap:1.1rem;margin:.55rem 0 .3rem;font-size:12.5px;color:var(--ink-2)}
+.legend .chip{display:flex;align-items:center;gap:.4rem}
+.legend .swatch{width:14px;height:3px;border-radius:2px}
+.chart-box{position:relative}
+.chart-box svg{width:100%;height:auto;display:block}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:#fff;font-size:12px;line-height:1.5;padding:.45rem .65rem;border-radius:8px;transform:translate(-50%,-110%);white-space:nowrap;opacity:0;transition:opacity .1s}
+.tip .tq{font-weight:700;margin-bottom:.1rem}
+details.tableview{margin-top:.6rem;font-size:12.5px}
+details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
+.bigidea{padding:1.15rem 1.25rem;margin-bottom:1rem;background:var(--violet-tint);border:1px solid var(--violet-line);border-radius:var(--radius)}
+.bigidea h3{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--violet);margin-bottom:.45rem}
+.bigidea p{font-size:13.5px;line-height:1.6}
+.bigidea ul{margin:.5rem 0 0 1.15rem;font-size:13px;line-height:1.6;color:var(--ink-2)}
+
+.lb-card{padding:1.1rem 1.25rem;margin-bottom:1rem}
+.lb-card h3{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.7rem}
+.lb-row{display:flex;align-items:center;gap:.7rem;padding:.6rem .8rem;border:1px solid var(--border);border-radius:10px;margin-bottom:.45rem;background:#fff}
+.lb-row.you{border-color:var(--violet);background:var(--violet-tint)}
+.lb-row.first{border-color:var(--warn-line);background:var(--warn-tint)}
+.lb-rank{font-size:13px;font-weight:700;min-width:24px;text-align:center;color:var(--ink-3)}
+.lb-rank.gold{color:var(--gold);font-size:15px}
+.lb-name{flex:1;font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-name .you-tag{font-weight:400;color:var(--ink-3)}
+.lb-stars{font-size:12px}
+.lb-score{font-size:13.5px;font-weight:700;min-width:64px;text-align:right}
+.lb-badge{font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:5px;background:var(--page);color:var(--ink-2)}
+.lb-badge.bust{background:var(--neg-tint);color:var(--neg)}
+.lb-badge.win{background:var(--warn-tint);color:var(--gold)}
+.discuss{padding:1rem 1.15rem;margin-bottom:1rem;border-left:4px solid var(--violet)}
+.discuss h3{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--violet);margin-bottom:.4rem}
+.discuss p{font-size:13.5px;color:var(--ink-2);line-height:1.6}
+.btn-row{display:flex;gap:.6rem;flex-wrap:wrap}
+.btn-outline{background:#fff;border:1.5px solid var(--border);color:var(--ink);padding:.7rem 1.3rem;font-size:13.5px}
+.btn-outline:hover{border-color:var(--violet);color:var(--violet)}
+
+.foot{text-align:center;font-size:11.5px;color:var(--ink-3);padding:2rem 1rem;letter-spacing:.04em}
+
+@media(max-width:560px){
+  .rules-grid,.howto{grid-template-columns:1fr 1fr}
+  .stat-row{grid-template-columns:1fr 1fr}
+  .duo{grid-template-columns:1fr}
+  .order-row{flex-wrap:wrap}
+  .order-cost{margin-left:0}
+  .game-tag{display:none}
+  .step span.slabel{display:none}
+}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="wordmark">
+      <span class="nyu">NYU</span><span class="div"></span><span class="school">Stern</span>
+    </div>
+    <div class="game-tag">CASH &amp; CARRY · Financial Accounting</div>
+  </div>
+</header>
+<nav class="stepper" id="stepper" aria-label="Game progress">
+  <div class="stepper-inner" id="stepper-inner"></div>
+</nav>
+
+<main class="wrap">
+
+<!-- ============ INTRO ============ -->
+<section id="screen-intro" class="screen active">
+  <div class="hero">
+    <h1>Cash <span class="amp">&amp;</span> Carry</h1>
+    <p class="sub">Run a tiny retail business for four quarters. Margins are thin and inventory is paid for up front. Post the highest <strong>net income</strong> — without ever running out of <strong>cash</strong>. They are not the same thing. That's the whole game.</p>
+  </div>
+
+  <div class="cols">
+  <div class="col">
+  <div class="card name-panel">
+    <input class="name-input" id="player-name" type="text" placeholder="Enter your name" maxlength="20" autocomplete="off" aria-label="Your name">
+    <button class="btn btn-primary" id="btn-start" disabled>Start the challenge</button>
+  </div>
+
+  <div class="rules-head"><span class="kicker">The setup</span></div>
+  <div class="rules-grid">
+    <div class="card rule-card"><div class="rlabel">Starting cash</div><div class="rval num">$200</div></div>
+    <div class="card rule-card"><div class="rlabel">Selling price</div><div class="rval num">$30 / unit</div></div>
+    <div class="card rule-card"><div class="rlabel">Unit cost</div><div class="rval num">$20 — paid when you order</div></div>
+    <div class="card rule-card"><div class="rlabel">Operating expenses</div><div class="rval num">$40 / quarter</div></div>
+    <div class="card rule-card"><div class="rlabel">Length</div><div class="rval">4 quarters + a year-end close where every IOU settles</div></div>
+    <div class="card rule-card"><div class="rlabel">Demand</div><div class="rval">Forecast only — actual revealed after you order</div></div>
+  </div>
+  </div>
+
+  <div class="col">
+  <div class="ledger-rules">
+    <h3>Three rules of the ledger</h3>
+    <ol>
+      <li><strong>Revenue</strong> is recorded when you <em>make the sale</em> — even if the customer pays you later.</li>
+      <li><strong>Cost of goods sold</strong> is recorded when a unit <em>sells</em> — not when you buy it. Unsold units sit on the balance sheet as inventory.</li>
+      <li><strong>Cash</strong> keeps its own score. Inventory is paid for the moment you order it, customers may pay late, and bills come due — cash moves only when money actually changes hands.</li>
+    </ol>
+  </div>
+
+  <div class="rules-head" style="margin-top:1.8rem"><span class="kicker">Each quarter</span></div>
+  <div class="howto">
+    <div class="card hstep"><div class="hnum">1</div><div class="htitle">Read the forecast</div><div class="htext">Analysts give you a demand range — never the exact number.</div></div>
+    <div class="card hstep"><div class="hnum">2</div><div class="htitle">Place your order</div><div class="htext">Buy inventory — cash up front, and only as much as your cash covers. Too little and you miss sales; too much and cash sits on the shelf.</div></div>
+    <div class="card hstep"><div class="hnum">3</div><div class="htitle">See what sold</div><div class="htext">Actual demand is revealed and the books are posted.</div></div>
+    <div class="card hstep"><div class="hnum">4</div><div class="htitle">Pass the insight check</div><div class="htext">One question per quarter. Answer right on the first try to earn a CFO star ★.</div></div>
+  </div>
+  </div>
+  </div>
+</section>
+
+<!-- ============ DECISION ============ -->
+<section id="screen-decision" class="screen">
+  <div class="q-head">
+    <span class="q-title" id="d-title">Quarter 1</span>
+    <span class="q-player" id="d-player"></span>
+  </div>
+
+  <div class="stat-row">
+    <div class="card stat"><div class="slabel">Cash</div><div class="sval num" id="st-cash">$200</div><div class="ssub num" id="st-cash-sub"></div></div>
+    <div class="card stat"><div class="slabel">Inventory</div><div class="sval num" id="st-inv">0 units</div><div class="ssub num" id="st-inv-val"></div></div>
+    <div class="card stat"><div class="slabel">Net income to date</div><div class="sval num" id="st-ni">$0</div></div>
+    <div class="card stat"><div class="slabel">CFO stars</div><div class="sval stars" id="st-stars"></div></div>
+  </div>
+
+  <div class="cols">
+  <div class="col">
+  <div class="forecast">
+    <div class="kicker">Analyst forecast — this quarter's demand</div>
+    <div class="fnum num" id="f-range">5–9 units</div>
+    <div class="ftext" id="f-text"></div>
+    <div class="fboost" id="f-boost" style="display:none"></div>
+  </div>
+
+  <div class="unlock" id="unlock" style="display:none">
+    <div class="kicker">New this quarter — working-capital tools</div>
+    <p><strong>Credit sales:</strong> let customers pay one quarter later. More customers buy (demand +50%) — but you collect no cash from sales this quarter. <strong>Supplier credit:</strong> order now, pay next quarter, for a $2-per-unit fee — the only way to stock more than your cash allows. The year-end surge is coming; plan your working capital.</p>
+  </div>
+
+  <div class="card decision">
+    <h3>Your decision</h3>
+    <div class="order-row">
+      <label for="sl-buy">Units to order</label>
+      <input type="range" id="sl-buy" min="0" max="40" value="0" step="1">
+      <div class="qty">
+        <button type="button" id="qty-minus" aria-label="One fewer unit">−</button>
+        <span class="qval num" id="out-buy">0</span>
+        <button type="button" id="qty-plus" aria-label="One more unit">+</button>
+      </div>
+    </div>
+    <div class="order-cost" id="order-cost"></div>
+
+    <div class="toggles" id="toggles" style="display:none">
+      <div class="toggle-row">
+        <div class="tinfo">Offer customers credit
+          <div class="tsub">Demand +50% — but all of this quarter's sales are collected <em>next</em> quarter.</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="tog-credit"><span class="toggle-ui"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="tinfo">Pay supplier next quarter
+          <div class="tsub">No cash out today, and no affordability cap — but a $2/unit fee hits this quarter's income, and the full bill ($22/unit) comes due next quarter.</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="tog-latepay"><span class="toggle-ui"></span></label>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <div class="col">
+  <div class="card decision">
+    <h3>Your plan on paper</h3>
+    <div class="plan" style="margin-top:0">
+      <div id="plan-fixed"></div>
+      <table class="scen-table" id="scen-table"></table>
+      <div class="risk" id="risk-box"></div>
+    </div>
+    <button class="btn btn-submit" id="btn-submit">Lock in the order →</button>
+  </div>
+  </div>
+  </div>
+</section>
+
+<!-- ============ RESULTS ============ -->
+<section id="screen-results" class="screen">
+  <div class="q-head">
+    <span class="q-title" id="r-title">Quarter 1 — results</span>
+    <span class="q-player" id="r-player"></span>
+  </div>
+
+  <div class="cols">
+  <div class="col">
+  <div class="card reveal">
+    <div class="kicker">Actual demand</div>
+    <div class="rnum num" id="rv-num" aria-live="polite">0 units</div>
+    <p class="rline" id="rv-line"></p>
+  </div>
+
+  <div class="duo">
+    <div class="card half">
+      <div class="dlabel">Net income this quarter</div>
+      <div class="dval num" id="duo-ni">$0</div>
+      <div class="dsub num" id="duo-ni-sub"></div>
+    </div>
+    <div class="card half">
+      <div class="dlabel">Cash change this quarter</div>
+      <div class="dval num" id="duo-cash">$0</div>
+      <div class="dsub num" id="duo-cash-sub"></div>
+    </div>
+  </div>
+  <p class="vs-note" id="vs-note"></p>
+
+  <div class="card insight" id="insight">
+    <div class="kicker">Insight check — worth one CFO star ★</div>
+    <p class="iq" id="iq"></p>
+    <div id="iopts"></div>
+    <div id="ifeedback" style="display:none">
+      <p class="iverdict" id="iverdict"></p>
+      <p class="iexplain" id="iexplain"></p>
+    </div>
+  </div>
+  </div>
+
+  <div class="col">
+  <div class="card statements-wait" id="statements-wait">
+    Your financial statements for the quarter post here —<br>answer the insight check to open the books.
+  </div>
+  <div class="statements" id="statements">
+    <div class="sec">
+      <h3>Income statement — what you earned</h3>
+      <table class="fs" id="tbl-is"></table>
+    </div>
+    <div class="sec">
+      <h3>Cash flow — where the money went</h3>
+      <table class="fs" id="tbl-cf"></table>
+      <div class="bridge-note" id="bridge"></div>
+    </div>
+    <div class="sec">
+      <h3>Balance sheet — where you stand</h3>
+      <table class="fs" id="tbl-bs"></table>
+      <p class="tie" id="bs-tie"></p>
+    </div>
+    <button class="btn btn-next" id="btn-next">Next quarter →</button>
+  </div>
+  </div>
+  </div>
+</section>
+
+<!-- ============ BUST ============ -->
+<section id="screen-bust" class="screen">
+  <div class="bust">
+    <h2>Out of cash.</h2>
+    <p id="bust-text"></p>
+    <button class="btn btn-next" id="btn-bust-next">See how it ended →</button>
+  </div>
+</section>
+
+<!-- ============ YEAR-END CLOSE ============ -->
+<section id="screen-close" class="screen">
+  <div class="q-head">
+    <span class="q-title">Year-end close</span>
+    <span class="q-player" id="c-player"></span>
+  </div>
+  <div class="card reveal">
+    <div class="kicker">The year is over — every IOU settles now</div>
+    <p class="rline" style="margin-top:.6rem">Customers pay what they owe you. You pay what you owe your supplier. Whatever cash is left is what you really finished with.</p>
+  </div>
+  <div class="sec">
+    <h3>Settling the books</h3>
+    <table class="fs" id="tbl-close"></table>
+  </div>
+  <div class="risk" id="close-verdict" style="margin-bottom:1rem"></div>
+  <button class="btn btn-next" id="btn-close-next">See the final picture →</button>
+</section>
+
+<!-- ============ FINAL ============ -->
+<section id="screen-final" class="screen">
+  <div class="final-head">
+    <h2 id="fin-title">Year complete</h2>
+    <p class="sub" id="fin-sub"></p>
+  </div>
+
+  <div class="stat-row">
+    <div class="card stat"><div class="slabel">Final net income</div><div class="sval num" id="fin-ni">$0</div></div>
+    <div class="card stat"><div class="slabel">Ending cash</div><div class="sval num" id="fin-cash">$0</div></div>
+    <div class="card stat"><div class="slabel">CFO stars</div><div class="sval stars" id="fin-stars"></div></div>
+    <div class="card stat"><div class="slabel">Status</div><div class="sval" id="fin-status" style="font-size:15px"></div></div>
+  </div>
+
+  <div class="cols wide-left">
+  <div class="col">
+  <div class="card chart-card">
+    <h3>Two scorecards, one business</h3>
+    <div class="legend">
+      <span class="chip"><span class="swatch" style="background:var(--chart-ni)"></span>Cumulative net income</span>
+      <span class="chip"><span class="swatch" style="background:var(--chart-cash)"></span>Cash balance</span>
+    </div>
+    <div class="chart-box" id="chart-box"></div>
+    <details class="tableview"><summary>View as table</summary><div id="chart-table"></div></details>
+  </div>
+
+  <div class="bigidea">
+    <h3>The big idea</h3>
+    <p id="idea-main"></p>
+    <ul id="idea-points"></ul>
+  </div>
+  </div>
+
+  <div class="col">
+  <div class="card lb-card">
+    <h3>Class leaderboard</h3>
+    <div id="lb-list"></div>
+  </div>
+
+  <div class="card discuss">
+    <h3>For class discussion</h3>
+    <p>Compare the top of the leaderboard with anyone marked <strong>bust</strong>. A bust player may show strong net income — so what killed them? Would you lend money to the player with the highest profit, or the one with the most cash? Which scorecard does a supplier care about? An investor?</p>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-outline" id="btn-again">Play again</button>
+    <button class="btn btn-outline" id="btn-clear">Reset leaderboard</button>
+  </div>
+  </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">NYU Stern School of Business · Cash &amp; Carry — a profit-vs-cash simulation</footer>
+
+<script>
+'use strict';
+/* ================= constants ================= */
+const SELL=30, COST=20, LATE_FEE=2, OPEX=40, START_CASH=200, CREDIT_MULT=1.5, QUARTERS=4;
+const LB_KEY='scc_leaderboard_v3';
+
+/* Forecast tiers: the range is public, the actual draw is hidden until results.
+   Tuned via Monte Carlo so the affordability cap binds in ~1-3 quarters per game
+   and the Q4 surge exceeds what unleveraged cash can stock. */
+const TIERS=[
+  {lo:5,  hi:9,  text:'A cautious opener — buyers are hesitant and the season is just getting going.'},
+  {lo:7,  hi:14, text:'A wide-open quarter — could be busy, could be quiet. Analysts disagree.'},
+  {lo:5,  hi:12, text:'Mid-year lull — demand usually softens, and the range is wide.'},
+  {lo:10, hi:22, text:'Year-end surge — the biggest quarter of the year, if you can find a way to stock for it.'}
+];
+
+/* ================= state ================= */
+let S=null;
+let leaderboard=[];
+try{ leaderboard=JSON.parse(localStorage.getItem(LB_KEY)||'[]'); }catch(e){}
+
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'−$':'$')+Math.abs(n).toLocaleString();
+const fmtS=n=>(n>0?'+$':n<0?'−$':'$')+Math.abs(n).toLocaleString();
+const randInt=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+function newGame(name){
+  S={
+    name, quarter:1, cash:START_CASH, inventory:0, ar:0, ap:0,
+    cumNI:0, stars:0, bust:false, bustAtClose:false, close:null, history:[],
+    demands:TIERS.map(t=>randInt(t.lo,t.hi))
+  };
+}
+
+/* ================= chrome ================= */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $('screen-'+id).classList.add('active');
+  const inPlay=(id==='decision'||id==='results');
+  $('stepper').classList.toggle('on',inPlay);
+  if(inPlay)renderStepper();
+  window.scrollTo({top:0});
+}
+function renderStepper(){
+  let h='';
+  for(let i=1;i<=QUARTERS;i++){
+    const cls=i<S.quarter?'done':i===S.quarter?'now':'';
+    h+=`<div class="step ${cls}"><span>Q${i}</span><span class="bar"></span></div>`;
+  }
+  $('stepper-inner').innerHTML=h;
+}
+function starHTML(n){
+  let h='';
+  for(let i=0;i<QUARTERS;i++)h+=i<n?'★':'<span class="off">★</span>';
+  return h;
+}
+
+/* ================= intro ================= */
+$('player-name').addEventListener('input',function(){ $('btn-start').disabled=this.value.trim().length<2; });
+$('player-name').addEventListener('keydown',function(e){ if(e.key==='Enter'&&this.value.trim().length>=2)start(); });
+$('btn-start').addEventListener('click',start);
+function start(){
+  const name=$('player-name').value.trim();
+  if(name.length<2)return;
+  newGame(name);
+  renderDecision();
+}
+
+/* ================= decision ================= */
+/* Cash actually spendable this quarter: bank balance plus the credit sales
+   that collect as the quarter opens, minus the supplier bill that falls due. */
+function effCash(){return S.cash+S.ar-S.ap;}
+
+function renderDecision(){
+  const q=S.quarter, t=TIERS[q-1];
+
+  // opening obligations: last quarter's supplier bill falls due before anything else
+  if(effCash()<0){
+    S.cash=effCash();S.ar=0;S.ap=0;S.bust=true;
+    $('bust-text').innerHTML=`Your supplier bill came due at the start of Quarter ${q}, and even after collecting everything customers owed you, you couldn't cover it. Your cash stands at <strong>${fmt(S.cash)}</strong>. `+
+      (S.cumNI>0?`Your books show <strong>${fmt(S.cumNI)} of net income</strong> — you were profitable, and you still died. Profit is an opinion; cash is a fact.`
+                :`Net income to date: <strong>${fmt(S.cumNI)}</strong>. The debt came due before the business could.`);
+    saveScore();
+    showScreen('bust');
+    return;
+  }
+
+  showScreen('decision');
+  $('d-title').textContent='Quarter '+q+' of '+QUARTERS;
+  $('d-player').textContent=S.name;
+  $('st-cash').textContent=fmt(S.cash);
+  $('st-cash').className='sval num'+(S.cash<60?' neg':'');
+  $('st-cash-sub').textContent=(S.ar>0||S.ap>0)?fmt(effCash())+' after settling IOUs':'';
+  $('st-inv').textContent=S.inventory+(S.inventory===1?' unit':' units');
+  $('st-inv-val').textContent=S.inventory>0?fmt(S.inventory*COST)+' at cost':'';
+  $('st-ni').textContent=fmt(S.cumNI);
+  $('st-ni').className='sval num'+(S.cumNI>0?' pos':S.cumNI<0?' neg':'');
+  $('st-stars').innerHTML=starHTML(S.stars);
+  $('f-text').textContent=t.text;
+
+  $('sl-buy').value=0;
+  const showTools=q>=3;
+  $('toggles').style.display=showTools?'block':'none';
+  $('unlock').style.display=q===3?'block':'none';
+  $('tog-credit').checked=false;
+  $('tog-latepay').checked=false;
+  updatePlan();
+
+  // death-spiral check: if no plan at all can keep cash non-negative, the game is over
+  if(bestPossibleEnd()<0){
+    S.bust=true;
+    $('bust-text').innerHTML=`Quarter ${q} opens with ${fmt(effCash())} in the till — not enough to cover operating expenses even in a perfect quarter. The lights go out. `+
+      (S.cumNI>0?`Your books show <strong>${fmt(S.cumNI)} of net income</strong>. Profitable, and broke.`:`Net income to date: <strong>${fmt(S.cumNI)}</strong>.`);
+    saveScore();
+    showScreen('bust');
+  }
+}
+
+function bestPossibleEnd(){
+  const q=S.quarter, t=TIERS[q-1], fin=q===QUARTERS;
+  const combos=q>=3?[[false,false],[true,false],[false,true],[true,true]]:[[false,false]];
+  let best=-Infinity;
+  combos.forEach(([cr,la])=>{
+    const hi=cr?Math.ceil(t.hi*CREDIT_MULT):t.hi;
+    const bMax=la?hi+5:Math.max(0,Math.floor(effCash()/COST));
+    for(let b=0;b<=bMax;b++)best=Math.max(best,scenario(b,hi,cr,la,fin).endCash);
+  });
+  return best;
+}
+
+['input','change'].forEach(ev=>{
+  $('sl-buy').addEventListener(ev,updatePlan);
+  $('tog-credit').addEventListener(ev,updatePlan);
+  $('tog-latepay').addEventListener(ev,updatePlan);
+});
+$('qty-minus').addEventListener('click',()=>{ $('sl-buy').value=Math.max(0,+$('sl-buy').value-1); updatePlan(); });
+$('qty-plus').addEventListener('click',()=>{ $('sl-buy').value=Math.min(+$('sl-buy').max,+$('sl-buy').value+1); updatePlan(); });
+
+/* One what-if: given an order size and a demand outcome, where do the books land?
+   `fin` = final quarter, so project through the year-end close (AR collects, AP paid). */
+function scenario(buy,demand,credit,late,fin){
+  const sold=Math.min(S.inventory+buy,demand);
+  const fee=late?buy*LATE_FEE:0;
+  const ni=sold*SELL-sold*COST-OPEX-fee;
+  let endCash=S.cash+S.ar+(credit?0:sold*SELL)-(late?0:buy*COST)-OPEX-S.ap;
+  if(fin)endCash+=(credit?sold*SELL:0)-(late?buy*(COST+LATE_FEE):0);
+  return {sold,ni,endCash,fee};
+}
+
+function updatePlan(){
+  const q=S.quarter, t=TIERS[q-1], fin=q===QUARTERS;
+  const credit=q>=3&&$('tog-credit').checked;
+  const late=q>=3&&$('tog-latepay').checked;
+
+  // affordability: paying now caps the order at what your cash covers
+  const sl=$('sl-buy');
+  const genMax=Math.ceil(t.hi*CREDIT_MULT)+8;
+  const afford=Math.max(0,Math.floor(effCash()/COST));
+  sl.max=late?genMax:Math.min(genMax,afford);
+  if(+sl.value>+sl.max)sl.value=sl.max;
+  const buy=+sl.value;
+  $('out-buy').textContent=buy;
+
+  const affordNote=late?'no affordability cap while deferring payment':'your cash covers up to '+afford+' units';
+  $('order-cost').textContent=(buy>0
+    ? (late?`Order cost ${fmt(buy*COST)} + ${fmt(buy*LATE_FEE)} fee — nothing due until next quarter`
+           :`Order cost ${fmt(buy*COST)} — cash out now`)
+    : 'Order nothing and sell only what you already hold.')+' · '+affordNote;
+
+  const lo=credit?Math.ceil(t.lo*CREDIT_MULT):t.lo;
+  const hi=credit?Math.ceil(t.hi*CREDIT_MULT):t.hi;
+  $('f-range').textContent=t.lo+'–'+t.hi+' units';
+  $('f-boost').style.display=credit?'block':'none';
+  if(credit)$('f-boost').textContent='With credit offered: '+lo+'–'+hi+' units';
+
+  // fixed cash commitments, known before demand resolves
+  const fixed=[];
+  if(S.ar>0)fixed.push(['Collect last quarter’s credit sales','<span class="tpos">'+fmtS(S.ar)+'</span>']);
+  if(S.ap>0)fixed.push(['Pay supplier bill from last quarter','<span class="tneg">'+fmtS(-S.ap)+'</span>']);
+  if(buy>0)fixed.push(['Pay supplier for this order',late?'$0 now — '+fmt(buy*(COST+LATE_FEE))+' due '+(fin?'at the year-end close':'next quarter'):'<span class="tneg">'+fmtS(-buy*COST)+'</span>']);
+  fixed.push(['Operating expenses','<span class="tneg">'+fmtS(-OPEX)+'</span>']);
+  if(credit)fixed.push(['Cash from this quarter’s sales','$0 now — collected '+(fin?'at the year-end close':'next quarter')]);
+  $('plan-fixed').innerHTML=fixed.map(r=>`<div class="prow num"><span>${r[0]}</span><span>${r[1]}</span></div>`).join('');
+
+  const wc=scenario(buy,lo,credit,late,fin);   // worst case
+  const bc=scenario(buy,hi,credit,late,fin);   // best case
+  const cls=v=>v<0?'tneg':'tpos';
+  const cashLabel=fin?'Cash after the year-end close':'Ending cash';
+  $('scen-table').innerHTML=`
+    <tr><th>If demand comes in…</th><th>Low (${lo})</th><th>High (${hi})</th></tr>
+    <tr><td>Units you sell</td><td class="num">${wc.sold}</td><td class="num">${bc.sold}</td></tr>
+    <tr><td>Net income</td><td class="num ${cls(wc.ni)}">${fmt(wc.ni)}</td><td class="num ${cls(bc.ni)}">${fmt(bc.ni)}</td></tr>
+    <tr><td>${cashLabel}</td><td class="num ${cls(wc.endCash)}">${fmt(wc.endCash)}</td><td class="num ${cls(bc.endCash)}">${fmt(bc.endCash)}</td></tr>`;
+
+  const risk=$('risk-box');
+  const blocked=bc.endCash<0;
+  if(blocked){
+    risk.className='risk stop';
+    risk.textContent=fin
+      ?'This plan can’t cover its obligations at the year-end close even if demand comes in at the top of the range. Order fewer units.'
+      :'This plan runs out of cash even if demand comes in at the top of the range. Order fewer units or defer a payment.';
+  }else if(wc.endCash<0){
+    risk.className='risk warn';
+    risk.textContent=fin
+      ?'⚠ Gamble: if demand comes in low, you won’t cover your bills at the year-end close and the business fails. High demand keeps you alive. Your call.'
+      :'⚠ Gamble: if demand comes in low, your cash goes negative and the game ends. High demand keeps you alive. Your call.';
+  }else{
+    risk.className='risk ok';
+    risk.textContent='Solvent in every scenario — cash stays positive no matter where demand lands.';
+  }
+  $('btn-submit').disabled=blocked;
+}
+
+/* ================= quarter resolution ================= */
+$('btn-submit').addEventListener('click',lockOrder);
+function lockOrder(){
+  const q=S.quarter, t=TIERS[q-1];
+  const credit=q>=3&&$('tog-credit').checked;
+  const late=q>=3&&$('tog-latepay').checked;
+  let buy=+$('sl-buy').value;
+  if(!late)buy=Math.min(buy,Math.max(0,Math.floor(effCash()/COST)));
+
+  const actualBase=S.demands[q-1];
+  const demand=credit?Math.ceil(actualBase*CREDIT_MULT):actualBase;
+  const avail=S.inventory+buy;
+  const sold=Math.min(avail,demand);
+  const rev=sold*SELL, cogs=sold*COST, fee=late?buy*LATE_FEE:0;
+  const ni=rev-cogs-OPEX-fee;
+
+  const collections=(credit?0:rev)+S.ar;
+  const supplierPaid=(late?0:buy*COST)+S.ap;
+  const endCash=S.cash+collections-supplierPaid-OPEX;
+
+  const h={
+    q, buy, credit, late, forecastLo:t.lo, forecastHi:t.hi,
+    demandBase:actualBase, demand, avail, sold, rev, cogs, fee, ni,
+    startCash:S.cash, endCash, collections, supplierPaid,
+    arCollected:S.ar, apPaid:S.ap,
+    startInv:S.inventory, endInv:avail-sold,
+    newAR:credit?rev:0, newAP:late?buy*(COST+LATE_FEE):0
+  };
+  S.history.push(h);
+  S.cash=endCash;
+  S.inventory=h.endInv;
+  S.ar=h.newAR;
+  S.ap=h.newAP;
+  S.cumNI+=ni;
+  if(S.cash<0)S.bust=true;
+  renderResults(h);
+}
+
+/* ================= results ================= */
+function renderResults(h){
+  showScreen('results');
+  $('r-title').textContent='Quarter '+h.q+' — results';
+  $('r-player').textContent=S.name;
+
+  // demand reveal (count-up)
+  const rv=$('rv-num');
+  let shown=0;
+  const step=Math.max(1,Math.ceil(h.demand/18));
+  rv.textContent='0 units';
+  const timer=setInterval(()=>{
+    shown=Math.min(h.demand,shown+step);
+    rv.textContent=shown+' units';
+    if(shown>=h.demand)clearInterval(timer);
+  },40);
+
+  let line;
+  if(h.demand>h.avail){
+    const missed=h.demand-h.avail;
+    line=`You stocked <strong>${h.avail}</strong> and demand hit <strong>${h.demand}</strong> — you sold out and turned away <strong>${missed} ${missed===1?'buyer':'buyers'}</strong>, walking past ~${fmt(missed*(SELL-COST))} of gross profit.`;
+  }else if(h.endInv>0){
+    line=`You stocked <strong>${h.avail}</strong> and sold <strong>${h.sold}</strong>. The other <strong>${h.endInv}</strong> ${h.endInv===1?'unit':'units'} didn't sell — ${fmt(h.endInv*COST)} of your cash is now sitting on the shelf as inventory.`;
+  }else{
+    line=`You stocked <strong>${h.avail}</strong> and sold every single unit — a perfect read of the market.`;
+  }
+  if(h.credit)line+=' Credit terms pulled in extra buyers ('+h.demandBase+' → '+h.demand+' demanded).';
+  $('rv-line').innerHTML=line;
+
+  // twin scorecards
+  const dCash=h.endCash-h.startCash;
+  $('duo-ni').textContent=fmtS(h.ni);
+  $('duo-ni').style.color=h.ni>=0?'var(--pos)':'var(--neg)';
+  $('duo-ni-sub').textContent='what the income statement says';
+  $('duo-cash').textContent=fmtS(dCash);
+  $('duo-cash').style.color=dCash>=0?'var(--pos)':'var(--neg)';
+  $('duo-cash-sub').textContent='what your bank account says';
+  const gap=h.ni-dCash;
+  $('vs-note').textContent=gap===0
+    ? 'This quarter the two scorecards happen to agree.'
+    : 'Same quarter, same business — a '+fmt(Math.abs(gap))+' gap between the two scorecards. The insight check below asks why.';
+
+  if(S.bust){renderBustPath(h);return;}
+
+  buildInsight(h);
+  buildStatements(h);
+  $('statements').classList.remove('on');
+  $('statements-wait').style.display='';
+  $('btn-next').textContent=h.q===QUARTERS?'See the final picture →':'Next quarter →';
+}
+
+function renderBustPath(h){
+  // Show reveal + duo, then jump to bust screen after a beat
+  setTimeout(()=>{
+    $('bust-text').innerHTML=`Your cash balance fell to <strong>${fmt(S.cash)}</strong> — you can't pay your bills, and the business folds in Quarter ${h.q}. `+
+      (S.cumNI>0?`Here's the kicker: your books show <strong>${fmt(S.cumNI)} of net income</strong>. You were profitable. You still died. Profit is an opinion — cash is a fact.`
+                :`Your net income stands at <strong>${fmt(S.cumNI)}</strong>. The market never came through, and the cash ran out with it.`);
+    saveScore();
+    showScreen('bust');
+  },1600);
+}
+$('btn-bust-next').addEventListener('click',()=>renderFinal());
+
+/* ---------- insight check ---------- */
+let insightAnswered=false, firstTry=true;
+function buildInsight(h){
+  insightAnswered=false;firstTry=true;
+  const qz=makeQuestion(h);
+  $('iq').textContent=qz.text;
+  $('ifeedback').style.display='none';
+  const box=$('iopts');box.innerHTML='';
+  // stable shuffle
+  const opts=qz.options.map((o,i)=>({...o,i})).sort(()=>Math.random()-.5);
+  opts.forEach(o=>{
+    const b=document.createElement('button');
+    b.type='button';b.className='opt';b.textContent=o.t;
+    b.addEventListener('click',()=>answer(b,o,qz,opts));
+    box.appendChild(b);
+  });
+}
+function answer(btn,opt,qz,opts){
+  if(insightAnswered)return;
+  if(opt.correct){
+    insightAnswered=true;
+    if(firstTry){S.stars++;}
+    document.querySelectorAll('.opt').forEach(b=>{b.disabled=true;if(b!==btn)b.classList.add('dim');});
+    btn.classList.add('correct');
+    $('iverdict').textContent=firstTry?'Correct — CFO star earned ★':'Correct — but no star this time.';
+    $('iverdict').className='iverdict good';
+    $('iexplain').textContent=qz.explain;
+    $('ifeedback').style.display='block';
+    $('statements-wait').style.display='none';
+    $('statements').classList.add('on');
+  }else{
+    firstTry=false;
+    btn.classList.add('wrong');btn.disabled=true;
+    $('iverdict').textContent='Not quite — try again.';
+    $('iverdict').className='iverdict bad';
+    $('iexplain').textContent='';
+    $('ifeedback').style.display='block';
+  }
+}
+
+function makeQuestion(h){
+  const q=h.q;
+  if(q===1){
+    if(h.endInv>0){
+      return {
+        text:`You paid ${fmt(h.buy*COST)} for ${h.buy} units but only ${h.sold} sold. On this quarter's income statement, the ${h.endInv} unsold ${h.endInv===1?'unit':'units'} (${fmt(h.endInv*COST)}) show up as…`,
+        options:[
+          {t:'Nothing — they sit on the balance sheet as inventory, an asset, until they sell',correct:true},
+          {t:'An expense, because you already paid the supplier for them'},
+          {t:'A loss on the income statement'},
+          {t:'Revenue you haven’t earned yet'}
+        ],
+        explain:'Cost follows the sale, not the payment. A unit’s $20 cost only becomes an expense (COGS) in the quarter it sells. Until then it’s an asset — which is exactly why cash can drop while income looks fine.'
+      };
+    }
+    return {
+      text:`Demand was ${h.demand} but you could only sell ${h.sold}. Where do the ${h.demand-h.sold} missed sales appear on your income statement?`,
+      options:[
+        {t:'They don’t — sales that never happened are never recorded anywhere',correct:true},
+        {t:'As negative revenue'},
+        {t:'As an expense called “lost sales”'},
+        {t:'As a liability you owe customers'}
+      ],
+      explain:'Accounting only records transactions that actually occur. Missed sales are a real economic cost — but an invisible one. Your statements will never show you the profit you didn’t capture.'
+    };
+  }
+  if(q===2){
+    return {
+      text:'You pay the supplier $20 the day a unit arrives. When does that $20 hit your income statement?',
+      options:[
+        {t:'In the quarter the unit sells — that’s when it becomes cost of goods sold',correct:true},
+        {t:'In the quarter you pay the supplier'},
+        {t:'Spread evenly across all four quarters'},
+        {t:'Never — inventory purchases aren’t expenses'}
+      ],
+      explain:'This is the matching principle: expenses are recorded in the same period as the revenue they generate. The cash left in the purchase quarter, but the expense waits for the sale — the two scorecards move on different clocks.'
+    };
+  }
+  if(q===3){
+    return {
+      text:h.credit
+        ? `You sold ${h.sold} units on credit — customers pay you next quarter. When is the ${fmt(h.rev)} of revenue recorded?`
+        : 'Suppose you sell a unit on credit and the customer pays next quarter. When is the revenue recorded?',
+      options:[
+        {t:'This quarter, when the sale is made — collecting the cash is a separate event',correct:true},
+        {t:'Next quarter, when the cash actually arrives'},
+        {t:'Half now, half when they pay'},
+        {t:'Only if the customer ends up paying'}
+      ],
+      explain:'Revenue recognition follows the sale, not the cash. The IOU becomes an asset called accounts receivable. That’s why a booming quarter of credit sales can leave your bank account completely dry.'
+    };
+  }
+  return {
+    text:'Your landlord wants proof you can pay next quarter’s bills. Which number actually answers the question?',
+    options:[
+      {t:'Cash on the balance sheet — bills are paid with cash, not with earnings',correct:true},
+      {t:'Cumulative net income — it shows the business is profitable'},
+      {t:'Total revenue — it shows customers want the product'},
+      {t:'Gross profit — it shows healthy margins'}
+    ],
+    explain:'Net income measures performance; cash measures survival. Lenders, landlords, and suppliers get paid out of your bank account, not your income statement — which is why they read the cash flow statement first.'
+  };
+}
+
+/* ---------- statements ---------- */
+function buildStatements(h){
+  const n=v=>v.toLocaleString();
+  $('tbl-is').innerHTML=`
+    <tr><td>Sales revenue <span style="color:var(--ink-3)">(${h.sold} × $${SELL})</span></td><td class="n num tpos">${fmt(h.rev)}</td></tr>
+    <tr><td>Cost of goods sold <span style="color:var(--ink-3)">(${h.sold} × $${COST})</span></td><td class="n num tneg">${fmt(-h.cogs)}</td></tr>
+    <tr class="tot"><td>Gross profit</td><td class="n num">${fmt(h.rev-h.cogs)}</td></tr>
+    <tr><td>Operating expenses</td><td class="n num tneg">${fmt(-OPEX)}</td></tr>
+    ${h.fee>0?`<tr><td>Supplier-credit fee <span style="color:var(--ink-3)">(${h.buy} × $${LATE_FEE})</span></td><td class="n num tneg">${fmt(-h.fee)}</td></tr>`:''}
+    <tr class="tot"><td>Net income</td><td class="n num ${h.ni>=0?'tpos':'tneg'}">${fmt(h.ni)}</td></tr>`;
+
+  const dCash=h.endCash-h.startCash;
+  const cashSales=h.credit?0:h.rev;
+  let cf=`<tr><td>Beginning cash</td><td class="n num">${fmt(h.startCash)}</td></tr>`;
+  if(cashSales>0)cf+=`<tr><td>+ Collected from this quarter’s sales</td><td class="n num tpos">${fmt(cashSales)}</td></tr>`;
+  if(h.credit)cf+=`<tr class="sub"><td class="indent">This quarter’s ${fmt(h.rev)} of credit sales — collected next quarter</td><td class="n num">$0</td></tr>`;
+  if(h.arCollected>0)cf+=`<tr><td>+ Collected last quarter’s credit sales</td><td class="n num tpos">${fmt(h.arCollected)}</td></tr>`;
+  if(h.buy>0&&!h.late)cf+=`<tr><td>− Paid supplier for ${h.buy} units</td><td class="n num tneg">${fmt(-h.buy*COST)}</td></tr>`;
+  if(h.late&&h.buy>0)cf+=`<tr class="sub"><td class="indent">This quarter’s ${fmt(h.newAP)} supplier bill — due next quarter</td><td class="n num">$0</td></tr>`;
+  if(h.apPaid>0)cf+=`<tr><td>− Paid last quarter’s supplier bill</td><td class="n num tneg">${fmt(-h.apPaid)}</td></tr>`;
+  cf+=`<tr><td>− Operating expenses</td><td class="n num tneg">${fmt(-OPEX)}</td></tr>`;
+  cf+=`<tr class="tot"><td>Ending cash <span style="color:var(--ink-3)">(change: ${fmtS(dCash)})</span></td><td class="n num ${h.endCash<0?'tneg':''}">${fmt(h.endCash)}</td></tr>`;
+  $('tbl-cf').innerHTML=cf;
+
+  // net-income → cash bridge (indirect method, always ties)
+  const dInv=(h.endInv-h.startInv)*COST;
+  const dAR=h.newAR-h.arCollected;
+  const dAP=h.newAP-h.apPaid;
+  const parts=[];
+  if(dInv>0)parts.push(`− ${fmt(dInv)} of cash went into inventory that hasn’t sold yet`);
+  if(dInv<0)parts.push(`+ ${fmt(-dInv)} of this quarter’s COGS was inventory you’d already paid for`);
+  if(dAR>0)parts.push(`− ${fmt(dAR)} of revenue is still an IOU (accounts receivable)`);
+  if(dAR<0)parts.push(`+ ${fmt(-dAR)} collected from earlier credit sales (revenue already counted)`);
+  if(dAP>0)parts.push(`+ ${fmt(dAP)} of supplier bills deferred to next quarter (accounts payable)`);
+  if(dAP<0)parts.push(`− ${fmt(-dAP)} paid on last quarter’s supplier bill (expense already counted)`);
+  $('bridge').innerHTML=parts.length
+    ? `<strong>Bridging the gap:</strong> net income ${fmtS(h.ni)} vs cash change ${fmtS(dCash)}. The difference: <br>${parts.join('<br>')}`
+    : `<strong>No gap this quarter:</strong> every sale was cash, every purchased unit sold, and every bill was paid — so net income and the cash change match exactly. That alignment is the exception, not the rule.`;
+
+  const invVal=S.inventory*COST;
+  const assets=S.cash+S.ar+invVal;
+  const equity=assets-S.ap;
+  $('tbl-bs').innerHTML=`
+    <tr class="hd"><td colspan="2">Assets</td></tr>
+    <tr><td>Cash</td><td class="n num ${S.cash<0?'tneg':''}">${fmt(S.cash)}</td></tr>
+    ${S.ar>0?`<tr><td>Accounts receivable <span style="color:var(--ink-3)">(customers owe you)</span></td><td class="n num">${fmt(S.ar)}</td></tr>`:''}
+    ${invVal>0?`<tr><td>Inventory <span style="color:var(--ink-3)">(${S.inventory} units at $${COST} cost)</span></td><td class="n num">${fmt(invVal)}</td></tr>`:''}
+    <tr class="tot"><td>Total assets</td><td class="n num">${fmt(assets)}</td></tr>
+    <tr class="hd"><td colspan="2">Liabilities &amp; equity</td></tr>
+    ${S.ap>0?`<tr><td>Accounts payable <span style="color:var(--ink-3)">(you owe the supplier)</span></td><td class="n num">${fmt(S.ap)}</td></tr>`:''}
+    <tr><td>Owner’s equity <span style="color:var(--ink-3)">($${START_CASH} invested + ${fmt(S.cumNI)} earned)</span></td><td class="n num">${fmt(equity)}</td></tr>
+    <tr class="tot"><td>Total liabilities &amp; equity</td><td class="n num">${fmt(S.ap+equity)}</td></tr>`;
+  $('bs-tie').textContent='✓ Balances — assets '+fmt(assets)+' = liabilities + equity '+fmt(S.ap+equity)+'. Equity grew by exactly your cumulative net income.';
+}
+
+$('btn-next').addEventListener('click',()=>{
+  if(S.quarter===QUARTERS)finishYear();
+  else{S.quarter++;renderDecision();}
+});
+
+/* ================= year-end close ================= */
+function finishYear(){
+  S.close={before:S.cash,ar:S.ar,ap:S.ap,after:S.cash+S.ar-S.ap};
+  S.cash=S.close.after;S.ar=0;S.ap=0;
+  if(S.cash<0){S.bust=true;S.bustAtClose=true;}
+  saveScore();
+  if(S.close.ar>0||S.close.ap>0)renderClose();
+  else renderFinal();
+}
+
+function renderClose(){
+  showScreen('close');
+  $('c-player').textContent=S.name;
+  const c=S.close;
+  let rows=`<tr><td>Cash at the end of Q4</td><td class="n num">${fmt(c.before)}</td></tr>`;
+  if(c.ar>0)rows+=`<tr><td>+ Customers pay their credit-sale IOUs</td><td class="n num tpos">${fmt(c.ar)}</td></tr>`;
+  if(c.ap>0)rows+=`<tr><td>− You pay the supplier what you owe</td><td class="n num tneg">${fmt(-c.ap)}</td></tr>`;
+  rows+=`<tr class="tot"><td>Final cash</td><td class="n num ${c.after<0?'tneg':'tpos'}">${fmt(c.after)}</td></tr>`;
+  $('tbl-close').innerHTML=rows;
+  const v=$('close-verdict');
+  if(S.bust){
+    v.className='risk stop';
+    v.textContent='The bills exceeded the cash. The business was profitable on paper — and insolvent in fact. This is exactly how real companies fail.';
+    $('btn-close-next').textContent='See how it ended →';
+  }else{
+    v.className='risk ok';
+    v.textContent='All IOUs settled and cash stayed positive — the accrual entries unwound into real money. This is what a healthy working-capital cycle looks like.';
+    $('btn-close-next').textContent='See the final picture →';
+  }
+}
+$('btn-close-next').addEventListener('click',()=>renderFinal());
+
+/* ================= final ================= */
+function saveScore(){
+  leaderboard=leaderboard.filter(e=>e.name!==S.name);
+  leaderboard.push({name:S.name,ni:S.cumNI,cash:S.cash,stars:S.stars,bust:S.bust});
+  leaderboard.sort((a,b)=>(a.bust-b.bust)||(b.ni-a.ni));
+  try{localStorage.setItem(LB_KEY,JSON.stringify(leaderboard));}catch(e){}
+}
+
+function renderFinal(){
+  showScreen('final');
+  $('fin-title').textContent=S.bustAtClose?'Died at the close':S.bust?'The books close early':'Year complete';
+  $('fin-sub').textContent=S.bustAtClose
+    ? S.name+' — four profitable-looking quarters, then the bills came due'
+    : S.bust
+    ? S.name+' — the cash ran out in Quarter '+S.history.length
+    : S.name+' — four quarters, final ledger posted';
+  $('fin-ni').textContent=fmt(S.cumNI);
+  $('fin-ni').className='sval num '+(S.cumNI>0?'pos':S.cumNI<0?'neg':'');
+  $('fin-cash').textContent=fmt(S.cash);
+  $('fin-cash').className='sval num '+(S.cash<0?'neg':'');
+  $('fin-stars').innerHTML=starHTML(S.stars);
+  $('fin-status').innerHTML=S.bust?'<span class="tneg">Bust 💥</span>':'<span class="tpos">Solvent ✓</span>';
+  drawChart();
+  buildBigIdea();
+  renderBoard();
+}
+
+function drawChart(){
+  const pts=[{q:0,ni:0,cash:START_CASH}];
+  let cum=0;
+  S.history.forEach(h=>{cum+=h.ni;pts.push({q:h.q,ni:cum,cash:h.endCash});});
+  // the close settles IOUs: cash jumps or drops while net income stays flat
+  if(S.close&&(S.close.ar>0||S.close.ap>0))pts.push({q:5,ni:cum,cash:S.close.after});
+  const qLabel=q=>q===0?'Start':q===5?'Close':'Q'+q;
+
+  const W=640,H=300,padL=56,padR=20,padT=16,padB=34;
+  const vals=pts.flatMap(p=>[p.ni,p.cash]).concat([0]);
+  let lo=Math.min(...vals),hi=Math.max(...vals);
+  const span=Math.max(hi-lo,50);lo-=span*.08;hi+=span*.08;
+  const maxQ=pts[pts.length-1].q||1;
+  const x=q=>padL+(W-padL-padR)*q/maxQ;
+  const y=v=>padT+(H-padT-padB)*(1-(v-lo)/(hi-lo));
+
+  // gridlines: ~4 round steps
+  const rawStep=(hi-lo)/4;
+  const mag=Math.pow(10,Math.floor(Math.log10(rawStep)));
+  const step=Math.ceil(rawStep/mag)*mag;
+  let grid='';
+  for(let v=Math.ceil(lo/step)*step;v<=hi;v+=step){
+    grid+=`<line x1="${padL}" x2="${W-padR}" y1="${y(v)}" y2="${y(v)}" stroke="#EDEAF2" stroke-width="1"/>
+           <text x="${padL-8}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="#8B8499">${(v<0?'−$':'$')+Math.abs(Math.round(v)).toLocaleString()}</text>`;
+  }
+  if(lo<0)grid+=`<line x1="${padL}" x2="${W-padR}" y1="${y(0)}" y2="${y(0)}" stroke="#C9C3D4" stroke-width="1.5"/>`;
+
+  const path=(key)=>pts.map((p,i)=>(i?'L':'M')+x(p.q).toFixed(1)+','+y(p[key]).toFixed(1)).join(' ');
+  const dots=(key,color)=>pts.map(p=>`<circle cx="${x(p.q)}" cy="${y(p[key])}" r="4" fill="${color}" stroke="#fff" stroke-width="2"/>`).join('');
+  const xLabels=pts.map(p=>`<text x="${x(p.q)}" y="${H-10}" text-anchor="middle" font-size="11" fill="#8B8499">${qLabel(p.q)}</text>`).join('');
+  const last=pts[pts.length-1];
+  const niC='#7B2FBE',cashC='#B45309';
+  // direct end labels, nudged apart if they collide
+  let yNi=y(last.ni),yCash=y(last.cash);
+  if(Math.abs(yNi-yCash)<14){const mid=(yNi+yCash)/2;yNi=yNi<=yCash?mid-8:mid+8;yCash=yNi<=yCash?mid+8:mid-8;}
+
+  const svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Line chart of cumulative net income versus cash balance by quarter">
+    ${grid}
+    <path d="${path('ni')}" fill="none" stroke="${niC}" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="${path('cash')}" fill="none" stroke="${cashC}" stroke-width="2.5" stroke-linecap="round"/>
+    ${dots('ni',niC)}${dots('cash',cashC)}
+    ${xLabels}
+    <line id="ch-cross" x1="0" x2="0" y1="${padT}" y2="${H-padB}" stroke="#C9C3D4" stroke-width="1" opacity="0"/>
+  </svg>`;
+  const box=$('chart-box');
+  box.innerHTML=svg+'<div class="tip" id="ch-tip"></div>';
+
+  // hover layer: nearest-quarter crosshair + tooltip
+  const svgEl=box.querySelector('svg'),tip=$('ch-tip'),cross=box.querySelector('#ch-cross');
+  function onMove(ev){
+    const r=svgEl.getBoundingClientRect();
+    const cx=ev.touches?ev.touches[0].clientX:ev.clientX;
+    const relX=(cx-r.left)/r.width*W;
+    let best=pts[0],bd=1e9;
+    pts.forEach(p=>{const d=Math.abs(x(p.q)-relX);if(d<bd){bd=d;best=p;}});
+    cross.setAttribute('x1',x(best.q));cross.setAttribute('x2',x(best.q));cross.setAttribute('opacity','1');
+    tip.innerHTML=`<div class="tq">${best.q===0?'Start':best.q===5?'Year-end close':'Quarter '+best.q}</div>Net income: ${fmt(best.ni)}<br>Cash: ${fmt(best.cash)}`;
+    tip.style.left=(x(best.q)/W*r.width)+'px';
+    tip.style.top=(Math.min(y(best.ni),y(best.cash))/H*r.height)+'px';
+    tip.style.opacity='1';
+  }
+  function onLeave(){tip.style.opacity='0';cross.setAttribute('opacity','0');}
+  svgEl.addEventListener('mousemove',onMove);
+  svgEl.addEventListener('touchmove',onMove,{passive:true});
+  svgEl.addEventListener('mouseleave',onLeave);
+  svgEl.addEventListener('touchend',onLeave);
+
+  // accessible table view
+  $('chart-table').innerHTML='<table class="fs" style="margin-top:.5rem"><tr class="hd"><td>Quarter</td><td class="n">Cumulative net income</td><td class="n">Cash balance</td></tr>'+
+    pts.map(p=>`<tr><td>${qLabel(p.q)}</td><td class="n num">${fmt(p.ni)}</td><td class="n num">${fmt(p.cash)}</td></tr>`).join('')+'</table>';
+}
+
+function buildBigIdea(){
+  const gap=S.cumNI-(S.cash-START_CASH);
+  let main;
+  if(S.bust){
+    main=S.cumNI>0
+      ? `Your income statement says you earned ${fmt(S.cumNI)}. Your bank account says you're dead. Both are true — profit is recorded when value is earned, but bills are paid with cash. Businesses don't fail when profits stop; they fail when the cash stops.`
+      : `You lost money on both scorecards this time — but notice they still told different stories along the way. Watch where the two lines separate in the chart above: every gap is a timing difference between earning value and receiving cash.`;
+  }else{
+    main=gap===0
+      ? `Your net income (${fmt(S.cumNI)}) exactly matches your change in cash — rare, and it only happens when nothing is owed and nothing is on the shelf at year end.`
+      : `You earned ${fmt(S.cumNI)} of net income, but your cash changed by ${fmtS(S.cash-START_CASH)}. The ${fmt(Math.abs(gap))} difference isn't an error — it's sitting on your balance sheet:`;
+  }
+  $('idea-main').textContent=main;
+  const pts=[];
+  if(S.close&&(S.close.ar>0||S.close.ap>0))pts.push(`At the year-end close you collected ${fmt(S.close.ar)} from customers and paid ${fmt(S.close.ap)} to your supplier — the year's timing differences unwinding into real cash.`);
+  if(S.inventory>0)pts.push(`${fmt(S.inventory*COST)} of cash is stored in ${S.inventory} unsold units (inventory).`);
+  if(S.ar>0)pts.push(`${fmt(S.ar)} of revenue you've earned is still in customers' pockets (accounts receivable).`);
+  if(S.ap>0)pts.push(`${fmt(S.ap)} of costs you've recorded hasn't left your bank yet (accounts payable).`);
+  if(!S.bust&&pts.length===0&&gap!==0)pts.push('Check your quarterly bridges above — timing differences opened and closed during the year.');
+  $('idea-points').innerHTML=pts.map(p=>'<li class="num">'+p+'</li>').join('');
+  $('idea-points').style.display=pts.length?'block':'none';
+}
+
+function renderBoard(){
+  const list=$('lb-list');
+  if(!leaderboard.length){list.innerHTML='<p style="font-size:13px;color:var(--ink-3)">No scores yet.</p>';return;}
+  list.innerHTML=leaderboard.map((e,i)=>{
+    const you=S&&e.name===S.name;
+    const first=i===0&&!e.bust;
+    return `<div class="lb-row${first?' first':''}${you?' you':''}">
+      <span class="lb-rank${first?' gold':''}">${first?'★':i+1}</span>
+      <span class="lb-name">${esc(e.name)}${you?' <span class="you-tag">(you)</span>':''}</span>
+      <span class="lb-stars stars">${starHTML(e.stars||0)}</span>
+      <span class="lb-score num ${e.ni>=0?'tpos':'tneg'}">${fmt(e.ni)}</span>
+      ${e.bust?'<span class="lb-badge bust">bust</span>':first?'<span class="lb-badge win">winner</span>':`<span class="lb-badge num">${fmt(e.cash)} cash</span>`}
+    </div>`;
+  }).join('');
+}
+
+$('btn-again').addEventListener('click',()=>{
+  $('player-name').value='';
+  $('btn-start').disabled=true;
+  showScreen('intro');
+  $('player-name').focus();
+});
+$('btn-clear').addEventListener('click',()=>{
+  if(confirm('Reset the class leaderboard? This cannot be undone.')){
+    leaderboard=[];
+    try{localStorage.removeItem(LB_KEY);}catch(e){}
+    renderBoard();
+  }
+});
+</script>
+</body>
+</html>
