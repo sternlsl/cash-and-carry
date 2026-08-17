@@ -120,6 +120,15 @@ body{
 .q-head{display:flex;align-items:baseline;justify-content:space-between;gap:.6rem;flex-wrap:wrap;margin-bottom:1rem}
 .q-title{font-size:24px;font-weight:700;letter-spacing:-.01em}
 .q-player{font-size:11.5px;font-weight:600;letter-spacing:.01em;color:var(--ink-3)}
+.reference-strip{display:flex;align-items:stretch;margin-bottom:.65rem;padding:.55rem .75rem;background:var(--violet-tint);border:1px solid var(--violet-line);border-radius:10px}
+.reference-heading{display:flex;flex-direction:column;justify-content:center;min-width:130px;padding-right:.8rem;margin-right:.25rem;border-right:1px solid var(--violet-line)}
+.reference-heading strong{font-size:12px;color:var(--violet)}
+.reference-heading span{font-size:10.5px;color:var(--ink-3)}
+.reference-values{display:grid;grid-template-columns:repeat(3,1fr);flex:1;min-width:0}
+.reference-item{display:flex;align-items:baseline;justify-content:space-between;gap:.5rem;padding:.15rem .8rem;border-right:1px solid var(--violet-line)}
+.reference-item:last-child{border-right:none}
+.reference-name{font-size:11px;color:var(--ink-2)}
+.reference-value{font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap}
 .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;margin-bottom:1rem}
 .stat{padding:.7rem .85rem}
 .stat .slabel{font-size:11px;font-weight:600;letter-spacing:0;color:var(--ink-3);margin-bottom:.15rem}
@@ -291,6 +300,14 @@ details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
 .foot{text-align:center;font-size:11.5px;color:var(--ink-3);padding:2rem 1rem;letter-spacing:.04em}
 
 @media(max-width:560px){
+  .reference-strip{display:block;padding:.65rem .75rem}
+  .reference-heading{display:flex;flex-direction:row;justify-content:space-between;min-width:0;padding:0 0 .45rem;margin:0 0 .45rem;border-right:none;border-bottom:1px solid var(--violet-line)}
+  .reference-values{grid-template-columns:repeat(3,1fr)}
+  .reference-item{display:block;padding:0 .5rem;text-align:center}
+  .reference-item:first-child{padding-left:0}
+  .reference-item:last-child{padding-right:0}
+  .reference-name{display:block;font-size:10px}
+  .reference-value{display:block;font-size:12px;margin-top:.1rem}
   .rules-grid,.howto{grid-template-columns:1fr 1fr}
   .stat-row{grid-template-columns:1fr 1fr}
   .duo{grid-template-columns:1fr}
@@ -391,6 +408,18 @@ details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
   <div class="q-head">
     <span class="q-title" id="d-title">Quarter 1</span>
     <span class="q-player" id="d-player"></span>
+  </div>
+
+  <div class="reference-strip" aria-label="Fixed game values">
+    <div class="reference-heading">
+      <strong>Fixed game values</strong>
+      <span>Quick reference</span>
+    </div>
+    <div class="reference-values">
+      <div class="reference-item"><span class="reference-name">Selling price</span><span class="reference-value num" id="ref-sell">$30 / unit</span></div>
+      <div class="reference-item"><span class="reference-name">Unit cost</span><span class="reference-value num" id="ref-cost">$20 / unit</span></div>
+      <div class="reference-item"><span class="reference-name">Operating expenses</span><span class="reference-value num" id="ref-opex">$40 / quarter</span></div>
+    </div>
   </div>
 
   <div class="stat-row">
@@ -847,6 +876,9 @@ function renderDecision(){
   showScreen('decision');
   $('d-title').textContent='Quarter '+q+' of '+QUARTERS;
   $('d-player').textContent=S.name;
+  $('ref-sell').textContent=fmt(SELL)+' / unit';
+  $('ref-cost').textContent=fmt(COST)+' / unit';
+  $('ref-opex').textContent=fmt(OPEX)+' / quarter';
   $('st-cash').textContent=fmt(S.cash);
   $('st-cash').className='sval num'+(S.cash<60?' neg':'');
   $('st-cash-sub').textContent=(S.ar>0||S.ap>0)?fmt(effCash())+' after settling IOUs':'';
