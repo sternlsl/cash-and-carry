@@ -7,7 +7,7 @@
 <meta name="description" content="An interactive inventory game for NYU Stern accounting students: learn why net income and cash are not the same thing.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -32,26 +32,24 @@
 }
 html{background:var(--page)}
 body{
-  font-family:'Public Sans',system-ui,-apple-system,sans-serif;
+  font-family:'Montserrat',system-ui,-apple-system,sans-serif;
   color:var(--ink);min-height:100vh;font-size:15px;line-height:1.5;
   -webkit-font-smoothing:antialiased;
 }
 .num{font-variant-numeric:tabular-nums}
 
 /* ---------- header ---------- */
-.masthead{background:var(--violet);color:#fff;padding:.8rem 1.25rem}
+.masthead{background:var(--violet);color:#fff;padding:0 1.25rem}
 .masthead-inner{max-width:760px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:1rem}
-.wordmark{display:flex;align-items:center;gap:.6rem;line-height:1}
-.wordmark .nyu{font-weight:800;font-size:17px;letter-spacing:.02em}
-.wordmark .div{width:1px;height:18px;background:rgba(255,255,255,.4)}
-.wordmark .school{font-weight:500;font-size:12px;letter-spacing:.22em;text-transform:uppercase;opacity:.9}
-.game-tag{font-size:12px;font-weight:600;letter-spacing:.05em;opacity:.9;white-space:nowrap}
+.wordmark{width:220px;flex-shrink:0}
+.wordmark img{display:block;width:100%;height:auto}
+.game-tag{font-size:12px;font-weight:600;letter-spacing:.01em;opacity:.9;white-space:nowrap}
 
 /* quarter stepper */
 .stepper{background:var(--violet-dk);padding:.55rem 1.25rem;display:none}
 .stepper.on{display:block}
 .stepper-inner{max-width:760px;margin:0 auto;display:flex;align-items:center;gap:.45rem}
-.step{flex:1;display:flex;align-items:center;gap:.45rem;color:rgba(255,255,255,.45);font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.step{flex:1;display:flex;align-items:center;gap:.45rem;color:rgba(255,255,255,.45);font-size:11px;font-weight:600;letter-spacing:.02em}
 .step .bar{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.18)}
 .step.done{color:rgba(255,255,255,.75)}
 .step.done .bar{background:rgba(255,255,255,.55)}
@@ -76,14 +74,17 @@ body{
 }
 
 .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
-.kicker{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.kicker{font-size:12.5px;font-weight:700;letter-spacing:0;color:var(--ink-3)}
 
 /* ---------- intro ---------- */
 .hero{text-align:center;padding:2.2rem 0 1.6rem}
-.hero h1{font-size:clamp(30px,6vw,42px);font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.hero h1{font-size:clamp(30px,6vw,42px);font-weight:700;letter-spacing:-.02em;line-height:1.1}
 .hero h1 .amp{color:var(--violet)}
 .hero .sub{margin-top:.5rem;font-size:15px;color:var(--ink-2);max-width:46ch;margin-left:auto;margin-right:auto}
-.name-panel{max-width:400px;margin:1.4rem auto 0;padding:1.25rem;text-align:center}
+.intro-flow{max-width:960px;margin:0 auto}
+.intro-section{margin-top:2rem}
+.intro-section:first-child{margin-top:0}
+.name-panel{max-width:400px;margin:0 auto;padding:1.25rem;text-align:center}
 .name-input{width:100%;padding:.75rem 1rem;font:inherit;font-size:15px;border:1.5px solid var(--border);border-radius:10px;text-align:center;outline:none;transition:border-color .15s}
 .name-input:focus{border-color:var(--violet);box-shadow:0 0 0 3px var(--violet-tint)}
 .btn{display:inline-block;border:none;cursor:pointer;font:inherit;font-weight:700;border-radius:10px;transition:background .15s,opacity .15s,transform .1s}
@@ -91,27 +92,28 @@ body{
 .btn-primary{background:var(--violet);color:#fff;padding:.8rem 2.2rem;font-size:15px;margin-top:.9rem;width:100%}
 .btn-primary:hover{background:var(--violet-dk)}
 .btn:disabled{opacity:.35;cursor:not-allowed}
-.rules-head{margin:2.1rem 0 .7rem;text-align:center}
+.rules-head{margin:0 0 .7rem;text-align:center}
 .rules-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem}
 .rule-card{padding:.85rem .95rem}
-.rule-card .rlabel{font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.2rem}
+.rule-card .rlabel{font-size:11.5px;font-weight:700;letter-spacing:0;color:var(--ink-3);margin-bottom:.2rem}
 .rule-card .rval{font-size:15px;font-weight:600}
-.ledger-rules{margin-top:1.6rem;padding:1.15rem 1.25rem;background:var(--violet-tint);border:1px solid var(--violet-line);border-radius:var(--radius)}
-.ledger-rules h3{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--violet);margin-bottom:.6rem}
+.ledger-rules{max-width:760px;margin:0 auto;padding:1.15rem 1.25rem;background:var(--violet-tint);border:1px solid var(--violet-line);border-radius:var(--radius)}
+.ledger-rules h3{font-size:14px;font-weight:700;letter-spacing:0;color:var(--violet);margin-bottom:.6rem}
 .ledger-rules ol{margin-left:1.15rem;font-size:13.5px;color:var(--ink);display:grid;gap:.35rem}
-.howto{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-top:1.4rem}
+.howto{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
 .howto .hstep{padding:.85rem .9rem;text-align:left}
 .howto .hnum{width:22px;height:22px;border-radius:50%;background:var(--violet);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-bottom:.5rem}
 .howto .htitle{font-size:13px;font-weight:700;margin-bottom:.15rem}
 .howto .htext{font-size:12px;color:var(--ink-2);line-height:1.45}
+@media(min-width:980px){.howto{grid-template-columns:repeat(4,1fr)}}
 
 /* ---------- shared game chrome ---------- */
 .q-head{display:flex;align-items:baseline;justify-content:space-between;gap:.6rem;flex-wrap:wrap;margin-bottom:1rem}
-.q-title{font-size:24px;font-weight:800;letter-spacing:-.01em}
-.q-player{font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.q-title{font-size:24px;font-weight:700;letter-spacing:-.01em}
+.q-player{font-size:11.5px;font-weight:600;letter-spacing:.01em;color:var(--ink-3)}
 .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;margin-bottom:1rem}
 .stat{padding:.7rem .85rem}
-.stat .slabel{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.15rem}
+.stat .slabel{font-size:11px;font-weight:600;letter-spacing:0;color:var(--ink-3);margin-bottom:.15rem}
 .stat .sval{font-size:18px;font-weight:700}
 .stat .ssub{font-size:11px;color:var(--ink-3);margin-top:1px}
 .sval.pos{color:var(--pos)}.sval.neg{color:var(--neg)}
@@ -121,7 +123,7 @@ body{
 /* forecast */
 .forecast{padding:1rem 1.15rem;margin-bottom:1rem;background:var(--warn-tint);border:1px solid var(--warn-line);border-radius:var(--radius)}
 .forecast .kicker{color:var(--warn)}
-.forecast .fnum{font-size:26px;font-weight:800;color:var(--warn);margin:.15rem 0}
+.forecast .fnum{font-size:26px;font-weight:700;color:var(--warn);margin:.15rem 0}
 .forecast .ftext{font-size:13px;color:var(--warn)}
 .forecast .fboost{font-size:12.5px;font-weight:600;color:var(--warn);margin-top:.3rem}
 
@@ -131,14 +133,14 @@ body{
 
 /* decision card */
 .decision{padding:1.15rem 1.25rem;margin-bottom:1rem}
-.decision h3{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.9rem}
+.decision h3{font-size:14px;font-weight:700;letter-spacing:0;color:var(--ink-3);margin-bottom:.9rem}
 .order-row{display:flex;align-items:center;gap:.9rem}
 .order-row label{font-size:13.5px;font-weight:600;min-width:105px}
 .order-row input[type=range]{flex:1;accent-color:var(--violet);height:22px}
 .qty{display:flex;align-items:center;gap:.4rem}
 .qty button{width:30px;height:30px;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-size:16px;font-weight:700;color:var(--violet);cursor:pointer}
 .qty button:hover{border-color:var(--violet)}
-.qty .qval{min-width:44px;text-align:center;font-size:18px;font-weight:800}
+.qty .qval{min-width:44px;text-align:center;font-size:18px;font-weight:700}
 .order-cost{font-size:12.5px;color:var(--ink-2);margin:.35rem 0 0 115px}
 .toggles{margin-top:1rem;border-top:1px solid var(--border);padding-top:.35rem}
 .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.65rem 0;border-bottom:1px solid var(--border)}
@@ -155,11 +157,11 @@ body{
 
 /* plan preview */
 .plan{margin-top:1rem;background:var(--page);border:1px solid var(--border);border-radius:10px;padding:.9rem 1rem}
-.plan h4{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.5rem}
+.plan h4{font-size:13px;font-weight:700;letter-spacing:0;color:var(--ink-3);margin-bottom:.5rem}
 .plan .prow{display:flex;justify-content:space-between;gap:.75rem;font-size:13px;padding:.28rem 0;border-bottom:1px dashed var(--border)}
 .plan .prow:last-child{border-bottom:none}
 .scen-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:.7rem;background:#fff;border-radius:8px;overflow:hidden;border:1px solid var(--border)}
-.scen-table th{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);text-align:right;padding:.5rem .7rem;background:var(--page);border-bottom:1px solid var(--border)}
+.scen-table th{font-size:11px;font-weight:700;letter-spacing:0;color:var(--ink-3);text-align:right;padding:.5rem .7rem;background:var(--page);border-bottom:1px solid var(--border)}
 .scen-table th:first-child{text-align:left}
 .scen-table td{padding:.42rem .7rem;text-align:right;border-bottom:1px solid var(--border)}
 .scen-table td:first-child{text-align:left;color:var(--ink-2)}
@@ -174,14 +176,14 @@ body{
 /* ---------- results ---------- */
 .reveal{padding:1.15rem 1.25rem;margin-bottom:1rem;text-align:center}
 .reveal .kicker{margin-bottom:.2rem}
-.reveal .rnum{font-size:38px;font-weight:800;color:var(--violet)}
+.reveal .rnum{font-size:38px;font-weight:700;color:var(--violet)}
 .reveal .rline{font-size:13.5px;color:var(--ink-2);max-width:52ch;margin:.35rem auto 0;line-height:1.5}
 .reveal .rline strong{color:var(--ink)}
 
 .duo{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:1rem}
 .duo .half{padding:1rem 1.1rem;text-align:center}
-.duo .dlabel{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.2rem}
-.duo .dval{font-size:27px;font-weight:800}
+.duo .dlabel{font-size:11px;font-weight:600;letter-spacing:0;color:var(--ink-3);margin-bottom:.2rem}
+.duo .dval{font-size:27px;font-weight:700}
 .duo .dsub{font-size:11.5px;color:var(--ink-3);margin-top:2px}
 .vs-note{text-align:center;font-size:13px;color:var(--ink-2);margin:-.3rem 0 1rem}
 
@@ -204,13 +206,13 @@ body{
 .statements{display:none}
 .statements.on{display:block;animation:rise .35s ease}
 .sec{margin-bottom:1rem}
-.sec h3{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.5rem}
+.sec h3{font-size:14px;font-weight:700;letter-spacing:0;color:var(--ink-3);margin-bottom:.5rem}
 .fs{width:100%;border-collapse:collapse;font-size:13.5px;background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden}
 .fs td{padding:.45rem .85rem;border-bottom:1px solid var(--border)}
 .fs td.n{text-align:right}
 .fs tr:last-child td{border-bottom:none}
 .fs .tot td{font-weight:700;background:var(--page)}
-.fs .hd td{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);background:var(--page);padding-top:.55rem}
+.fs .hd td{font-size:11px;font-weight:700;letter-spacing:0;color:var(--ink-3);background:var(--page);padding-top:.55rem}
 .fs .sub td{color:var(--ink-2);font-size:12.5px}
 .fs .indent{padding-left:1.6rem}
 .tpos{color:var(--pos)}.tneg{color:var(--neg)}
@@ -223,15 +225,15 @@ body{
 
 /* bust */
 .bust{padding:2rem 1.5rem;text-align:center;background:var(--neg-tint);border:1.5px solid #EDA29B;border-radius:var(--radius);margin-bottom:1rem}
-.bust h2{font-size:26px;font-weight:800;color:var(--neg);margin-bottom:.4rem}
+.bust h2{font-size:26px;font-weight:700;color:var(--neg);margin-bottom:.4rem}
 .bust p{font-size:14px;color:var(--neg);line-height:1.6;max-width:52ch;margin:0 auto 1.1rem}
 
 /* ---------- final ---------- */
 .final-head{text-align:center;padding:1.4rem 0 1.1rem}
-.final-head h2{font-size:30px;font-weight:800;letter-spacing:-.01em}
+.final-head h2{font-size:30px;font-weight:700;letter-spacing:-.01em}
 .final-head .sub{color:var(--ink-2);font-size:14px;margin-top:.25rem}
 .chart-card{padding:1.1rem 1.25rem;margin-bottom:1rem}
-.chart-card h3{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.chart-card h3{font-size:14px;font-weight:700;letter-spacing:0;color:var(--ink-3)}
 .legend{display:flex;gap:1.1rem;margin:.55rem 0 .3rem;font-size:12.5px;color:var(--ink-2)}
 .legend .chip{display:flex;align-items:center;gap:.4rem}
 .legend .swatch{width:14px;height:3px;border-radius:2px}
@@ -242,12 +244,12 @@ body{
 details.tableview{margin-top:.6rem;font-size:12.5px}
 details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
 .bigidea{padding:1.15rem 1.25rem;margin-bottom:1rem;background:var(--violet-tint);border:1px solid var(--violet-line);border-radius:var(--radius)}
-.bigidea h3{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--violet);margin-bottom:.45rem}
+.bigidea h3{font-size:14px;font-weight:700;letter-spacing:0;color:var(--violet);margin-bottom:.45rem}
 .bigidea p{font-size:13.5px;line-height:1.6}
 .bigidea ul{margin:.5rem 0 0 1.15rem;font-size:13px;line-height:1.6;color:var(--ink-2)}
 
 .lb-card{padding:1.1rem 1.25rem;margin-bottom:1rem}
-.lb-card h3{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.7rem}
+.lb-card h3{font-size:14px;font-weight:700;letter-spacing:0;color:var(--ink-3);margin-bottom:.7rem}
 .lb-row{display:flex;align-items:center;gap:.7rem;padding:.6rem .8rem;border:1px solid var(--border);border-radius:10px;margin-bottom:.45rem;background:#fff}
 .lb-row.you{border-color:var(--violet);background:var(--violet-tint)}
 .lb-row.first{border-color:var(--warn-line);background:var(--warn-tint)}
@@ -264,11 +266,11 @@ details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
 .signin-note.err{color:var(--neg)}
 .signin-who{font-size:11.5px;color:var(--ink-3);margin-bottom:.6rem}
 #gsi-button{display:flex;justify-content:center;min-height:44px}
-.lb-badge{font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:5px;background:var(--page);color:var(--ink-2)}
+.lb-badge{font-size:10.5px;font-weight:700;letter-spacing:0;padding:2px 8px;border-radius:5px;background:var(--page);color:var(--ink-2)}
 .lb-badge.bust{background:var(--neg-tint);color:var(--neg)}
 .lb-badge.win{background:var(--warn-tint);color:var(--gold)}
 .discuss{padding:1rem 1.15rem;margin-bottom:1rem;border-left:4px solid var(--violet)}
-.discuss h3{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--violet);margin-bottom:.4rem}
+.discuss h3{font-size:14px;font-weight:700;letter-spacing:0;color:var(--violet);margin-bottom:.4rem}
 .discuss p{font-size:13.5px;color:var(--ink-2);line-height:1.6}
 .btn-row{display:flex;gap:.6rem;flex-wrap:wrap}
 .btn-outline{background:#fff;border:1.5px solid var(--border);color:var(--ink);padding:.7rem 1.3rem;font-size:13.5px}
@@ -292,9 +294,9 @@ details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
 <header class="masthead">
   <div class="masthead-inner">
     <div class="wordmark">
-      <span class="nyu">NYU</span><span class="div"></span><span class="school">Stern</span>
+      <img src="img/stern_white_rgb.png" alt="NYU Stern">
     </div>
-    <div class="game-tag">CASH &amp; CARRY · Financial Accounting</div>
+    <div class="game-tag">Cash &amp; Carry · Financial Accounting</div>
   </div>
 </header>
 <nav class="stepper" id="stepper" aria-label="Game progress">
@@ -310,50 +312,54 @@ details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
     <p class="sub">Run a tiny retail business for four quarters. Margins are thin and inventory is paid for up front. Post the highest <strong>net income</strong> — without ever running out of <strong>cash</strong>. They are not the same thing. That's the whole game.</p>
   </div>
 
-  <div class="cols">
-  <div class="col">
-  <div class="card name-panel">
-    <div id="signin-panel" style="display:none">
-      <p class="signin-lead">Sign in with your NYU Google account to join the class leaderboard.</p>
-      <div id="gsi-button"></div>
-      <p class="signin-note" id="signin-note"></p>
-    </div>
-    <div id="play-panel">
-      <p class="signin-who" id="signin-who" style="display:none"></p>
-      <input class="name-input" id="player-name" type="text" placeholder="Enter your name" maxlength="20" autocomplete="off" aria-label="Your name">
-      <button class="btn btn-primary" id="btn-start" disabled>Start the challenge</button>
-    </div>
-  </div>
+  <div class="intro-flow">
+    <section class="intro-section" aria-labelledby="each-quarter-heading">
+      <div class="rules-head"><h2 class="kicker" id="each-quarter-heading">Each quarter</h2></div>
+      <div class="howto">
+        <div class="card hstep"><div class="hnum">1</div><div class="htitle">Read the forecast</div><div class="htext">Analysts give you a demand range — never the exact number.</div></div>
+        <div class="card hstep"><div class="hnum">2</div><div class="htitle">Place your order</div><div class="htext">Buy inventory — cash up front, and only as much as your cash covers. Too little and you miss sales; too much and cash sits on the shelf.</div></div>
+        <div class="card hstep"><div class="hnum">3</div><div class="htitle">See what sold</div><div class="htext">Actual demand is revealed and the books are posted.</div></div>
+        <div class="card hstep"><div class="hnum">4</div><div class="htitle">Pass the insight check</div><div class="htext">One question per quarter. Answer right on the first try to earn a CFO star ★.</div></div>
+      </div>
+    </section>
 
-  <div class="rules-head"><span class="kicker">The setup</span></div>
-  <div class="rules-grid">
-    <div class="card rule-card"><div class="rlabel">Starting cash</div><div class="rval num">$200</div></div>
-    <div class="card rule-card"><div class="rlabel">Selling price</div><div class="rval num">$30 / unit</div></div>
-    <div class="card rule-card"><div class="rlabel">Unit cost</div><div class="rval num">$20 — paid when you order</div></div>
-    <div class="card rule-card"><div class="rlabel">Operating expenses</div><div class="rval num">$40 / quarter</div></div>
-    <div class="card rule-card"><div class="rlabel">Length</div><div class="rval">4 quarters + a year-end close where every IOU settles</div></div>
-    <div class="card rule-card"><div class="rlabel">Demand</div><div class="rval">Forecast only — actual revealed after you order</div></div>
-  </div>
-  </div>
+    <section class="intro-section" aria-labelledby="setup-heading">
+      <div class="rules-head"><h2 class="kicker" id="setup-heading">The setup</h2></div>
+      <div class="rules-grid">
+        <div class="card rule-card"><div class="rlabel">Starting cash</div><div class="rval num">$200</div></div>
+        <div class="card rule-card"><div class="rlabel">Selling price</div><div class="rval num">$30 / unit</div></div>
+        <div class="card rule-card"><div class="rlabel">Unit cost</div><div class="rval num">$20 — paid when you order</div></div>
+        <div class="card rule-card"><div class="rlabel">Operating expenses</div><div class="rval num">$40 / quarter</div></div>
+        <div class="card rule-card"><div class="rlabel">Length</div><div class="rval">4 quarters + a year-end close where every IOU settles</div></div>
+        <div class="card rule-card"><div class="rlabel">Demand</div><div class="rval">Forecast only — actual revealed after you order</div></div>
+      </div>
+    </section>
 
-  <div class="col">
-  <div class="ledger-rules">
-    <h3>Three rules of the ledger</h3>
-    <ol>
-      <li><strong>Revenue</strong> is recorded when you <em>make the sale</em> — even if the customer pays you later.</li>
-      <li><strong>Cost of goods sold</strong> is recorded when a unit <em>sells</em> — not when you buy it. Unsold units sit on the balance sheet as inventory.</li>
-      <li><strong>Cash</strong> keeps its own score. Inventory is paid for the moment you order it, customers may pay late, and bills come due — cash moves only when money actually changes hands.</li>
-    </ol>
-  </div>
+    <section class="intro-section">
+      <div class="ledger-rules">
+        <h3>Three rules of the ledger</h3>
+        <ol>
+          <li><strong>Revenue</strong> is recorded when you <em>make the sale</em> — even if the customer pays you later.</li>
+          <li><strong>Cost of goods sold</strong> is recorded when a unit <em>sells</em> — not when you buy it. Unsold units sit on the balance sheet as inventory.</li>
+          <li><strong>Cash</strong> keeps its own score. Inventory is paid for the moment you order it, customers may pay late, and bills come due — cash moves only when money actually changes hands.</li>
+        </ol>
+      </div>
+    </section>
 
-  <div class="rules-head" style="margin-top:1.8rem"><span class="kicker">Each quarter</span></div>
-  <div class="howto">
-    <div class="card hstep"><div class="hnum">1</div><div class="htitle">Read the forecast</div><div class="htext">Analysts give you a demand range — never the exact number.</div></div>
-    <div class="card hstep"><div class="hnum">2</div><div class="htitle">Place your order</div><div class="htext">Buy inventory — cash up front, and only as much as your cash covers. Too little and you miss sales; too much and cash sits on the shelf.</div></div>
-    <div class="card hstep"><div class="hnum">3</div><div class="htitle">See what sold</div><div class="htext">Actual demand is revealed and the books are posted.</div></div>
-    <div class="card hstep"><div class="hnum">4</div><div class="htitle">Pass the insight check</div><div class="htext">One question per quarter. Answer right on the first try to earn a CFO star ★.</div></div>
-  </div>
-  </div>
+    <section class="intro-section" aria-label="Start the game">
+      <div class="card name-panel">
+        <div id="signin-panel" style="display:none">
+          <p class="signin-lead">Sign in with your NYU Google account to join the class leaderboard.</p>
+          <div id="gsi-button"></div>
+          <p class="signin-note" id="signin-note"></p>
+        </div>
+        <div id="play-panel">
+          <p class="signin-who" id="signin-who" style="display:none"></p>
+          <input class="name-input" id="player-name" type="text" placeholder="Enter your name" maxlength="20" autocomplete="off" aria-label="Your name">
+          <button class="btn btn-primary" id="btn-start" disabled>Start the challenge</button>
+        </div>
+      </div>
+    </section>
   </div>
 </section>
 

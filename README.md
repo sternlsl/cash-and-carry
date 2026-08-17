@@ -72,7 +72,7 @@ is a real constraint, not a theoretical one:
   so the statements didn't articulate).
 
 **UX / branding**
-- NYU violet (#57068C) chrome, Public Sans, quarter progress stepper, mobile
+- NYU violet (#57068C) chrome, Montserrat, quarter progress stepper, mobile
   responsive, accessible chart with a table view.
 
 ## Architecture
