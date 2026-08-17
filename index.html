@@ -321,7 +321,7 @@ details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
 <section id="screen-intro" class="screen active">
   <div class="hero">
     <h1>Cash <span class="amp">&amp;</span> Carry</h1>
-    <p class="sub">Run a tiny retail business for four quarters. Margins are thin and inventory is paid for up front. Post the highest <strong>net income</strong> — without ever running out of <strong>cash</strong>. They are not the same thing. That's the whole game.</p>
+    <p class="sub">In this game, you'll run a tiny retail business for four quarters. Margins are thin and you pay for inventory up front. Your goal is to post the highest <strong>net income</strong> without ever running out of <strong>cash</strong>.</p>
   </div>
 
   <div class="intro-layout">
@@ -329,10 +329,10 @@ details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
     <section class="intro-section" aria-labelledby="each-quarter-heading">
       <div class="rules-head"><h2 class="kicker" id="each-quarter-heading">Each quarter</h2></div>
       <div class="howto">
-        <div class="card hstep"><div class="hnum">1</div><div class="htitle">Read the forecast</div><div class="htext">Analysts give you a demand range — never the exact number.</div></div>
-        <div class="card hstep"><div class="hnum">2</div><div class="htitle">Place your order</div><div class="htext">Buy inventory — cash up front, and only as much as your cash covers. Too little and you miss sales; too much and cash sits on the shelf.</div></div>
+        <div class="card hstep"><div class="hnum">1</div><div class="htitle">Read the forecast</div><div class="htext">Analysts give you a demand range, but you won't know the exact demand. You'll need to plan around that uncertainty.</div></div>
+        <div class="card hstep"><div class="hnum">2</div><div class="htitle">Place your order</div><div class="htext">Buy inventory.You can only purchase as much as your cash covers. Buy too little, and you miss sales; too much, and unsold inventory sits on the shelf.</div></div>
         <div class="card hstep"><div class="hnum">3</div><div class="htitle">See what sold</div><div class="htext">Actual demand is revealed and the books are posted.</div></div>
-        <div class="card hstep"><div class="hnum">4</div><div class="htitle">Pass the insight check</div><div class="htext">One question per quarter. Answer right on the first try to earn a CFO star ★.</div></div>
+        <div class="card hstep"><div class="hnum">4</div><div class="htitle">Pass the insight check</div><div class="htext">Each quarter, you'll receive a more detailed question about your accounts. Answer right on the first try to earn a CFO star ★.</div></div>
       </div>
     </section>
 
@@ -352,9 +352,9 @@ details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
       <div class="ledger-rules">
         <h3>Three rules of the ledger</h3>
         <ol>
-          <li><strong>Revenue</strong> is recorded when you <em>make the sale</em> — even if the customer pays you later.</li>
+          <li><strong>Revenue</strong> is recorded when you <em>make the sale</em>, even if the customer pays you later.</li>
           <li><strong>Cost of goods sold</strong> is recorded when a unit <em>sells</em> — not when you buy it. Unsold units sit on the balance sheet as inventory.</li>
-          <li><strong>Cash</strong> keeps its own score. Inventory is paid for the moment you order it, customers may pay late, and bills come due — cash moves only when money actually changes hands.</li>
+          <li><strong>Cash</strong> is tracked separately. Inventory is paid for the moment you order it, customers may pay late, and bills come due. Cash moves only when money actually changes hands.</li>
         </ol>
       </div>
     </section>
@@ -378,7 +378,7 @@ details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
   <aside class="intro-leaderboard" aria-labelledby="intro-lb-heading">
     <div class="card lb-card">
       <h2 id="intro-lb-heading">Class leaderboard</h2>
-      <p class="intro-lb-lead">See the scores to beat, then put your working-capital strategy to the test.</p>
+      <p class="intro-lb-lead">See the scores to beat, then put your strategy to the test.</p>
       <div id="intro-lb-list"><p style="font-size:13px;color:var(--ink-3)">Loading scores…</p></div>
       <p class="lb-status" id="intro-lb-status"></p>
     </div>
@@ -411,7 +411,7 @@ details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
 
   <div class="unlock" id="unlock" style="display:none">
     <div class="kicker">New this quarter — working-capital tools</div>
-    <p><strong>Credit sales:</strong> let customers pay one quarter later. More customers buy (demand +50%) — but you collect no cash from sales this quarter. <strong>Supplier credit:</strong> order now, pay next quarter, for a $2-per-unit fee — the only way to stock more than your cash allows. The year-end surge is coming; plan your working capital.</p>
+    <p><strong>Credit sales:</strong> let customers pay one quarter later. Credit sales will increase demand by 50%, but you collect no cash from sales this quarter. <strong>Supplier credit:</strong> lets you order now and pay <em>next</em> quarter, for a $2-per-unit fee. This lets you stock more than your cash allows. The year-end surge is coming; plan your working capital.</p>
   </div>
 
   <div class="card decision">
@@ -436,7 +436,7 @@ details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
       </div>
       <div class="toggle-row">
         <div class="tinfo">Pay supplier next quarter
-          <div class="tsub">No cash out today, and no affordability cap — but a $2/unit fee hits this quarter's income, and the full bill ($22/unit) comes due next quarter.</div>
+          <div class="tsub">No cash out today, and you can purchase beyond what your cash allows, but a $2/unit fee hits this quarter's income, and the full bill ($22/unit) comes due next quarter.</div>
         </div>
         <label class="toggle"><input type="checkbox" id="tog-latepay"><span class="toggle-ui"></span></label>
       </div>
@@ -567,7 +567,7 @@ details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
   <div class="cols wide-left">
   <div class="col">
   <div class="card chart-card">
-    <h3>Two scorecards, one business</h3>
+    <h3>Two scores for your business</h3>
     <div class="legend">
       <span class="chip"><span class="swatch" style="background:var(--chart-ni)"></span>Cumulative net income</span>
       <span class="chip"><span class="swatch" style="background:var(--chart-cash)"></span>Cash balance</span>
@@ -592,7 +592,7 @@ details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
 
   <div class="card discuss">
     <h3>For class discussion</h3>
-    <p>Compare the top of the leaderboard with anyone marked <strong>bust</strong>. A bust player may show strong net income — so what killed them? Would you lend money to the player with the highest profit, or the one with the most cash? Which scorecard does a supplier care about? An investor?</p>
+    <p>Compare the top of the leaderboard with anyone marked <strong>bust</strong>. A bust player may show strong net income. If so, what killed them? Would you lend money to the player with the highest profit, or the one with the most cash? Which scorecard does a supplier care about? What about an investor?</p>
   </div>
 
   <div class="btn-row">
