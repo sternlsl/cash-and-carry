@@ -81,9 +81,13 @@ body{
 .hero h1{font-size:clamp(30px,6vw,42px);font-weight:700;letter-spacing:-.02em;line-height:1.1}
 .hero h1 .amp{color:var(--violet)}
 .hero .sub{margin-top:.5rem;font-size:15px;color:var(--ink-2);max-width:46ch;margin-left:auto;margin-right:auto}
+.intro-layout{display:grid;gap:2rem}
 .intro-flow{max-width:960px;margin:0 auto}
 .intro-section{margin-top:2rem}
 .intro-section:first-child{margin-top:0}
+.intro-leaderboard{min-width:0}
+.intro-leaderboard .lb-card{margin-bottom:0}
+.intro-lb-lead{font-size:12.5px;line-height:1.5;color:var(--ink-2);margin:-.25rem 0 .8rem}
 .name-panel{max-width:400px;margin:0 auto;padding:1.25rem;text-align:center}
 .name-input{width:100%;padding:.75rem 1rem;font:inherit;font-size:15px;border:1.5px solid var(--border);border-radius:10px;text-align:center;outline:none;transition:border-color .15s}
 .name-input:focus{border-color:var(--violet);box-shadow:0 0 0 3px var(--violet-tint)}
@@ -105,7 +109,12 @@ body{
 .howto .hnum{width:22px;height:22px;border-radius:50%;background:var(--violet);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-bottom:.5rem}
 .howto .htitle{font-size:13px;font-weight:700;margin-bottom:.15rem}
 .howto .htext{font-size:12px;color:var(--ink-2);line-height:1.45}
-@media(min-width:980px){.howto{grid-template-columns:repeat(4,1fr)}}
+@media(min-width:980px){
+  .intro-layout{grid-template-columns:minmax(0,1fr) 350px;align-items:start;gap:1.25rem}
+  .intro-flow{max-width:none}
+  .intro-leaderboard{position:sticky;top:1rem}
+  .howto{grid-template-columns:repeat(4,1fr)}
+}
 
 /* ---------- shared game chrome ---------- */
 .q-head{display:flex;align-items:baseline;justify-content:space-between;gap:.6rem;flex-wrap:wrap;margin-bottom:1rem}
@@ -249,16 +258,19 @@ details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
 .bigidea ul{margin:.5rem 0 0 1.15rem;font-size:13px;line-height:1.6;color:var(--ink-2)}
 
 .lb-card{padding:1.1rem 1.25rem;margin-bottom:1rem}
-.lb-card h3{font-size:14px;font-weight:700;letter-spacing:0;color:var(--ink-3);margin-bottom:.7rem}
+.lb-card h2,.lb-card h3{font-size:14px;font-weight:700;letter-spacing:0;color:var(--ink-3);margin-bottom:.7rem}
 .lb-row{display:flex;align-items:center;gap:.7rem;padding:.6rem .8rem;border:1px solid var(--border);border-radius:10px;margin-bottom:.45rem;background:#fff}
 .lb-row.you{border-color:var(--violet);background:var(--violet-tint)}
 .lb-row.first{border-color:var(--warn-line);background:var(--warn-tint)}
-.lb-rank{font-size:13px;font-weight:700;min-width:24px;text-align:center;color:var(--ink-3)}
+.lb-rank{font-size:13px;font-weight:700;min-width:34px;text-align:center;color:var(--ink-3)}
 .lb-rank.gold{color:var(--gold);font-size:15px}
 .lb-name{flex:1;font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lb-name .you-tag{font-weight:400;color:var(--ink-3)}
 .lb-stars{font-size:12px}
 .lb-score{font-size:13.5px;font-weight:700;min-width:64px;text-align:right}
+.lb-divider{display:flex;align-items:center;gap:.7rem;margin:1rem 0 .7rem;color:var(--violet)}
+.lb-divider::before,.lb-divider::after{content:'';height:1px;flex:1;background:var(--violet-line)}
+.lb-divider span{font-size:11.5px;font-weight:700;white-space:nowrap}
 .lb-status{font-size:11.5px;color:var(--ink-3);margin-top:.6rem;line-height:1.5}
 .lb-status.warn{color:var(--ink-2)}
 .signin-lead{font-size:13.5px;color:var(--ink-2);line-height:1.5;margin-bottom:.8rem}
@@ -312,6 +324,7 @@ details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
     <p class="sub">Run a tiny retail business for four quarters. Margins are thin and inventory is paid for up front. Post the highest <strong>net income</strong> — without ever running out of <strong>cash</strong>. They are not the same thing. That's the whole game.</p>
   </div>
 
+  <div class="intro-layout">
   <div class="intro-flow">
     <section class="intro-section" aria-labelledby="each-quarter-heading">
       <div class="rules-head"><h2 class="kicker" id="each-quarter-heading">Each quarter</h2></div>
@@ -360,6 +373,16 @@ details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
         </div>
       </div>
     </section>
+  </div>
+
+  <aside class="intro-leaderboard" aria-labelledby="intro-lb-heading">
+    <div class="card lb-card">
+      <h2 id="intro-lb-heading">Class leaderboard</h2>
+      <p class="intro-lb-lead">See the scores to beat, then put your working-capital strategy to the test.</p>
+      <div id="intro-lb-list"><p style="font-size:13px;color:var(--ink-3)">Loading scores…</p></div>
+      <p class="lb-status" id="intro-lb-status"></p>
+    </div>
+  </aside>
   </div>
 </section>
 
@@ -626,6 +649,7 @@ let S=null;
 // Seeded from localStorage so the board renders instantly and still works if
 // the network is down; replaced by the server's copy once a fetch succeeds.
 let leaderboard=[];
+let leaderboardView=null;
 try{ leaderboard=JSON.parse(localStorage.getItem(LB_KEY)||'[]'); }catch(e){}
 
 const $=id=>document.getElementById(id);
@@ -738,7 +762,7 @@ function onCredential(resp){
   if(pendingScore){
     const entry=pendingScore; pendingScore=null;
     postScore(entry).then(()=>refreshBoard()).catch(()=>{});
-  }
+  }else refreshBoard();
 }
 
 function initAuth(){
@@ -769,17 +793,26 @@ function initAuth(){
    sign-in button back so the student can recover without losing their game. */
 function signedOutByServer(){
   idToken=null; account=null; isAdmin=false; applyAdminUI();
+  if(leaderboardView){
+    leaderboardView={...leaderboardView,context:[],userRank:null};
+    leaderboard=[...leaderboardView.top];
+    cacheBoard();
+    renderBoard();
+  }
   showScreen('intro');
   showSignedOut('Your sign-in expired. Sign in again to post your score.',true);
   if(AUTH_ON&&window.google&&google.accounts&&google.accounts.id){
     try{ google.accounts.id.renderButton($('gsi-button'),{theme:'outline',size:'large',text:'signin_with',shape:'pill'}); }catch(e){}
   }
+  refreshBoard();
 }
 
 initAuth();
 // Hidden until the server confirms an instructor, so it never flashes visible
 // for a student while the board loads.
 applyAdminUI();
+renderBoard();
+refreshBoard();
 
 /* ================= intro ================= */
 $('player-name').addEventListener('input',function(){ $('btn-start').disabled=this.value.trim().length<2; });
@@ -1242,16 +1275,19 @@ function cacheBoard(){
 }
 
 function setStatus(msg,warn){
-  const el=$('lb-status');
-  if(!el)return;
-  el.textContent=msg||'';
-  el.className='lb-status'+(warn?' warn':'');
+  ['lb-status','intro-lb-status'].forEach(id=>{
+    const el=$(id);
+    if(!el)return;
+    el.textContent=msg||'';
+    el.className='lb-status'+(warn?' warn':'');
+  });
 }
 
 /* Records the finished run. Updates the local board immediately so the final
    screen never waits on the network, then pushes to the server and adopts the
    authoritative class board when it answers. */
 function saveScore(){
+  leaderboardView=null;
   leaderboard=leaderboard.filter(e=>e.name!==S.name);
   leaderboard.push({name:S.name,ni:S.cumNI,cash:S.cash,stars:S.stars,bust:S.bust});
   sortBoard(leaderboard);
@@ -1309,29 +1345,47 @@ function postScore(entry){
    empty leaderboard. */
 function refreshBoard(){
   if(!ONLINE){setStatus('Scores are saved on this device only.');return Promise.resolve();}
-  if(AUTH_ON&&!idToken){
-    renderBoard();
-    setStatus('Sign in with your @'+SCHOOL_DOMAIN+' account to see the class board.',true);
-    return Promise.resolve();
-  }
   setStatus('Loading class scores…');
-  return apiFetch('/api/scores?board='+encodeURIComponent(BOARD_ID)+'&limit=100')
+  return apiFetch('/api/scores?board='+encodeURIComponent(BOARD_ID))
     .then(data=>{
-      leaderboard=sortBoard(data.scores||[]);
+      const hasContextView=Array.isArray(data.top)&&Array.isArray(data.context);
+      if(hasContextView){
+        const seenRanks=new Set();
+        leaderboard=[...data.top,...data.context]
+          .filter(entry=>{
+            if(seenRanks.has(entry.rank))return false;
+            seenRanks.add(entry.rank);
+            return true;
+          })
+          .sort((a,b)=>a.rank-b.rank);
+        leaderboardView={
+          top:data.top,
+          context:data.context,
+          total:Number(data.total)||0,
+          userRank:data.user_rank===null?null:Number(data.user_rank)
+        };
+      }else{
+        // Compatibility with an older API deployment during a rolling update.
+        leaderboardView=null;
+        leaderboard=sortBoard(data.scores||[]);
+      }
       isAdmin=!!data.admin;
       applyAdminUI();
       cacheBoard();
       renderBoard();
-      setStatus(!leaderboard.length?'The class board is empty — be the first to finish a year.'
-        :leaderboard.length===1?'1 player on the class board.'
-        :leaderboard.length+' players on the class board.');
+      const total=leaderboardView?leaderboardView.total:leaderboard.length;
+      const signinHint=AUTH_ON&&!idToken&&total?' Sign in to see your position.':'';
+      const summary=!total?'The class board is empty — be the first to finish a year.'
+        :total===1?'1 player on the class board.'
+        :total+' players on the class board.';
+      setStatus(summary+signinHint);
     })
     .catch(err=>{
       console.warn('leaderboard load failed',err);
       renderBoard();
       // Distinguish "we could not reach the server" from "the server would not
       // accept you" — the fixes are different and one is actionable.
-      if(err.status===401)      setStatus('Sign in again to see the class board.',true);
+      if(err.status===401)      setStatus(idToken?'Sign in again to see the class board.':'Sign in to see the class board.',true);
       else if(err.status===403) setStatus(err.message,true);
       else setStatus('Showing scores saved on this device — the class board is unreachable right now.',true);
     });
@@ -1452,22 +1506,44 @@ function buildBigIdea(){
   $('idea-points').style.display=pts.length?'block':'none';
 }
 
-function renderBoard(){
-  const list=$('lb-list');
-  if(!leaderboard.length){list.innerHTML='<p style="font-size:13px;color:var(--ink-3)">No scores yet.</p>';return;}
-  list.innerHTML=leaderboard.map((e,i)=>{
+function boardRows(rows){
+  return rows.map((e,i)=>{
     // Online the server flags your own row by Google account, so two students
     // sharing a display name are still told apart. Offline, name is all we have.
     const you=('you' in e)?!!e.you:(S&&e.name===S.name);
-    const first=i===0&&!e.bust;
+    const rank=Number(e.rank)||i+1;
+    const first=rank===1&&!e.bust;
     return `<div class="lb-row${first?' first':''}${you?' you':''}">
-      <span class="lb-rank${first?' gold':''}">${first?'★':i+1}</span>
+      <span class="lb-rank${first?' gold':''}">#${rank}</span>
       <span class="lb-name">${esc(e.name)}${you?' <span class="you-tag">(you)</span>':''}</span>
       <span class="lb-stars stars">${starHTML(e.stars||0)}</span>
       <span class="lb-score num ${e.ni>=0?'tpos':'tneg'}">${fmt(e.ni)}</span>
       ${e.bust?'<span class="lb-badge bust">bust</span>':first?'<span class="lb-badge win">winner</span>':`<span class="lb-badge num">${fmt(e.cash)} cash</span>`}
     </div>`;
   }).join('');
+}
+
+function renderBoardInto(listId,compact){
+  const list=$(listId);
+  if(!list)return;
+  if(!leaderboard.length){list.innerHTML='<p style="font-size:13px;color:var(--ink-3)">No scores yet.</p>';return;}
+  if(leaderboardView){
+    let html=boardRows(leaderboardView.top);
+    const topRanks=new Set(leaderboardView.top.map(entry=>entry.rank));
+    const context=leaderboardView.context.filter(entry=>!topRanks.has(entry.rank));
+    if(leaderboardView.userRank>10&&context.length){
+      html+=`<div class="lb-divider"><span>Your position · #${leaderboardView.userRank} of ${leaderboardView.total}</span></div>`;
+      html+=boardRows(context);
+    }
+    list.innerHTML=html;
+    return;
+  }
+  list.innerHTML=boardRows(compact?leaderboard.slice(0,10):leaderboard);
+}
+
+function renderBoard(){
+  renderBoardInto('lb-list',false);
+  renderBoardInto('intro-lb-list',true);
 }
 
 $('btn-again').addEventListener('click',()=>{
@@ -1483,6 +1559,7 @@ $('btn-clear').addEventListener('click',()=>{
   if(!ONLINE){
     if(!confirm('Clear the scores saved on this device? This cannot be undone.'))return;
     leaderboard=[];
+    leaderboardView=null;
     try{localStorage.removeItem(LB_KEY);}catch(e){}
     renderBoard();
     setStatus('Scores are saved on this device only.');

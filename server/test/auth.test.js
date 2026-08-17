@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { accountFromPayload } from '../index.js';
+import { accountFromPayload, leaderboardWindow } from '../index.js';
 
 // These payloads stand in for what Google returns *after* signature
 // verification. They exercise the school-account rules, which is the part this
@@ -67,4 +67,20 @@ test('falls back to the given name when no full name is present', () => {
   const acct = accountFromPayload(
     { sub: '9', email: 'r@nyu.edu', email_verified: true, hd: 'nyu.edu', given_name: 'Rio' }, NYU);
   assert.equal(acct.googleName, 'Rio');
+});
+
+test('centres the leaderboard context on the student when possible', () => {
+  assert.deepEqual(leaderboardWindow(50, 100), { start: 45, end: 55 });
+});
+
+test('keeps eleven contextual rows near the bottom of the board', () => {
+  assert.deepEqual(leaderboardWindow(100, 100), { start: 90, end: 100 });
+});
+
+test('uses the whole board when fewer than eleven scores exist', () => {
+  assert.deepEqual(leaderboardWindow(4, 7), { start: 1, end: 7 });
+});
+
+test('returns no context when the student has no ranked score', () => {
+  assert.equal(leaderboardWindow(null, 100), null);
 });

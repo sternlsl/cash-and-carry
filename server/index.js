@@ -187,6 +187,14 @@ async function requireStudent(req){
   return accountFromPayload(payload, ALLOWED_EMAIL_DOMAINS);
 }
 
+// The public landing-page board needs no identity. If a caller does send a
+// token, verify it fully so an invalid or expired credential never silently
+// falls back to anonymous access.
+async function optionalStudent(req){
+  if(!req.headers.authorization)return null;
+  return requireStudent(req);
+}
+
 /* ================= validation ================= */
 function parseBoard(raw){
   const board = String(raw ?? 'default').trim().toLowerCase();
@@ -205,6 +213,13 @@ function parseInt_(raw, field, { min, max }){
   return n;
 }
 
+export function leaderboardWindow(userRank, total){
+  if(!Number.isInteger(userRank)||!Number.isInteger(total)||userRank<1||userRank>total)return null;
+  const size = Math.min(total, 11);
+  const start = Math.max(1, Math.min(userRank - 5, total - size + 1));
+  return { start, end: start + size - 1 };
+}
+
 function parseName(raw, fallback){
   // Strip control characters, collapse whitespace. The page HTML-escapes on
   // render; this is about keeping the stored value sane, not about output.
@@ -220,16 +235,53 @@ function parseName(raw, fallback){
 /* ================= routes ================= */
 async function getScores(url, student){
   const board = parseBoard(url.searchParams.get('board'));
+  const studentSub = student ? student.sub : null;
+  const isAdmin = student ? ADMIN_EMAILS.includes(student.email) : false;
   const limitRaw = url.searchParams.get('limit');
-  const limit = limitRaw === null ? 100
-    : Math.min(MAX_LIMIT, Math.max(1, parseInt_(limitRaw, 'limit', { min: 1, max: MAX_LIMIT })));
+
+  // Preserve the original limited-list response for an older page that may
+  // still be cached while the API deploys. The current page omits `limit` and
+  // receives the scalable top-plus-context response below.
+  if(limitRaw !== null){
+    if(!student)throw new HttpError(401, 'Sign in with your school Google account.');
+    const limit = Math.min(MAX_LIMIT, Math.max(1, parseInt_(limitRaw, 'limit', { min: 1, max: MAX_LIMIT })));
+    const { rows } = await pool.query(
+      `SELECT name, ni, cash, stars, bust, (google_sub = $2) AS you
+         FROM scores
+        WHERE board = $1
+        ORDER BY bust ASC, ni DESC, cash DESC, updated_at ASC
+        LIMIT $3`,
+      [board, studentSub, limit]
+    );
+    return { board, admin: isAdmin, scores: rows };
+  }
+
   const { rows } = await pool.query(
-    `SELECT name, ni, cash, stars, bust, (google_sub = $2) AS you
-       FROM scores
-      WHERE board = $1
-      ORDER BY bust ASC, ni DESC, cash DESC, updated_at ASC
-      LIMIT $3`,
-    [board, student.sub, limit]
+    `WITH ranked AS (
+       SELECT name, ni, cash, stars, bust, google_sub,
+              row_number() OVER (
+                ORDER BY bust ASC, ni DESC, cash DESC, updated_at ASC
+              ) AS rank,
+              count(*) OVER () AS total
+         FROM scores
+        WHERE board = $1
+     ), viewer AS (
+       SELECT rank AS viewer_rank, total
+         FROM ranked
+        WHERE google_sub = $2
+     ), bounds AS (
+       SELECT greatest(1::bigint, least(viewer_rank - 5, total - 10)) AS context_start,
+              total
+         FROM viewer
+     )
+     SELECT name, ni, cash, stars, bust, (google_sub = $2) AS you,
+            rank::integer AS rank, ranked.total::integer AS total
+       FROM ranked
+       LEFT JOIN bounds ON true
+      WHERE rank <= 10
+         OR rank BETWEEN context_start AND least(bounds.total, context_start + 10)
+      ORDER BY rank`,
+    [board, studentSub]
   );
   // Deliberately no email or google_sub in the response: students should not be
   // able to harvest their classmates' addresses from the leaderboard.
@@ -237,7 +289,21 @@ async function getScores(url, student){
   // `admin` lets the page hide the reset button from students. It is a UI hint
   // only — DELETE re-checks the caller independently, so forging this flag in
   // the browser buys nothing.
-  return { board, admin: ADMIN_EMAILS.includes(student.email), scores: rows };
+  const total = rows.length ? rows[0].total : 0;
+  const scores = rows.map(({ total: _total, ...score }) => score);
+  const own = scores.find(score => score.you);
+  const userRank = own ? own.rank : null;
+  const contextWindow = leaderboardWindow(userRank, total);
+  return {
+    board,
+    admin: isAdmin,
+    total,
+    user_rank: userRank,
+    top: scores.filter(score => score.rank <= 10),
+    context: contextWindow === null ? []
+      : scores.filter(score => score.rank >= contextWindow.start && score.rank <= contextWindow.end),
+    scores
+  };
 }
 
 async function postScore(body, student){
@@ -321,7 +387,7 @@ const server = http.createServer(async (req, res) => {
     if(url.pathname === '/api/scores'){
       if(req.method === 'GET'){
         rateLimit(ip, 'get', 600, 60_000);
-        return send(res, 200, await getScores(url, await requireStudent(req)));
+        return send(res, 200, await getScores(url, await optionalStudent(req)));
       }
       if(req.method === 'POST'){
         rateLimit(ip, 'post', 240, 60_000);
