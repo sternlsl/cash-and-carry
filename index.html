@@ -121,9 +121,6 @@ body{
 .q-title{font-size:24px;font-weight:700;letter-spacing:-.01em}
 .q-player{font-size:11.5px;font-weight:600;letter-spacing:.01em;color:var(--ink-3)}
 .reference-strip{display:flex;align-items:stretch;margin-bottom:.65rem;padding:.55rem .75rem;background:var(--violet-tint);border:1px solid var(--violet-line);border-radius:10px}
-.reference-heading{display:flex;flex-direction:column;justify-content:center;min-width:130px;padding-right:.8rem;margin-right:.25rem;border-right:1px solid var(--violet-line)}
-.reference-heading strong{font-size:12px;color:var(--violet)}
-.reference-heading span{font-size:10.5px;color:var(--ink-3)}
 .reference-values{display:grid;grid-template-columns:repeat(3,1fr);flex:1;min-width:0}
 .reference-item{display:flex;align-items:baseline;justify-content:space-between;gap:.5rem;padding:.15rem .8rem;border-right:1px solid var(--violet-line)}
 .reference-item:last-child{border-right:none}
@@ -300,8 +297,7 @@ details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
 .foot{text-align:center;font-size:11.5px;color:var(--ink-3);padding:2rem 1rem;letter-spacing:.04em}
 
 @media(max-width:560px){
-  .reference-strip{display:block;padding:.65rem .75rem}
-  .reference-heading{display:flex;flex-direction:row;justify-content:space-between;min-width:0;padding:0 0 .45rem;margin:0 0 .45rem;border-right:none;border-bottom:1px solid var(--violet-line)}
+  .reference-strip{padding:.65rem .75rem}
   .reference-values{grid-template-columns:repeat(3,1fr)}
   .reference-item{display:block;padding:0 .5rem;text-align:center}
   .reference-item:first-child{padding-left:0}
@@ -411,10 +407,6 @@ details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
   </div>
 
   <div class="reference-strip" aria-label="Fixed game values">
-    <div class="reference-heading">
-      <strong>Fixed game values</strong>
-      <span>Quick reference</span>
-    </div>
     <div class="reference-values">
       <div class="reference-item"><span class="reference-name">Selling price</span><span class="reference-value num" id="ref-sell">$30 / unit</span></div>
       <div class="reference-item"><span class="reference-name">Unit cost</span><span class="reference-value num" id="ref-cost">$20 / unit</span></div>
