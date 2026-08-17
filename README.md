@@ -160,5 +160,6 @@ the first thing to check — the game degrades quietly by design.
   is now attributable to a verified account rather than anonymous. Fine as a
   discussion prop; don't grade off it.
 - **The board is student data now.** It ties school email addresses to
-  performance, so reading it requires sign-in, responses never include emails,
-  and old boards should be dropped rather than left to accumulate.
+  performance. The public landing page exposes display names and top scores but
+  never emails or Google ids; personalized ranking context requires sign-in.
+  Old boards should be dropped rather than left to accumulate.

@@ -12,13 +12,14 @@ stay maintainable by whoever inherits the course.
 | Method | Path | Auth | Purpose |
 | --- | --- | --- | --- |
 | `GET` | `/api/health` | none | Liveness, database round-trip, auth config |
-| `GET` | `/api/scores?board=<id>&limit=<n>` | student | Ranked board, solvent players first |
+| `GET` | `/api/scores?board=<id>` | optional | Public top 10; signed-in callers also receive their contextual ranking window |
 | `POST` | `/api/scores` | student | Record a finished run |
 | `DELETE` | `/api/scores?board=<id>` | instructor | Wipe one board |
 
-"student" means a `Authorization: Bearer <google-id-token>` header. The token's
-signature is verified against Google's published keys on every request, so the
-browser's claim of identity is never taken at face value.
+"student" means a `Authorization: Bearer <google-id-token>` header. "optional"
+means an anonymous request receives only public leaderboard data; when a token
+is supplied, its signature is still verified against Google's published keys
+before any personalized data is returned.
 
 `POST` body — note there is no identity in it, since identity comes from the
 verified token:
@@ -35,12 +36,18 @@ and does worse keeps their best result. The response reports which happened:
 { "board": "fall-2026", "saved": { ... }, "kept_existing": false }
 ```
 
-`GET` returns display names only. Emails and Google ids are deliberately not in
-the response, so students cannot harvest classmates' addresses from the board.
-Each row carries `you: true` for the caller's own entry, and the response carries
-`admin: true` when the caller is on `ADMIN_EMAILS` — the page uses that to show
-or hide the reset button. It is a UI hint only: `DELETE` re-checks the caller
-independently, so forging the flag in the browser buys nothing.
+`GET` always returns the public top 10 and total player count. A verified caller
+also receives their rank and a context window containing their result plus up
+to ten nearby results. Display names are included, but emails and Google ids are
+deliberately omitted. Each personalized row carries `you: true`, and the
+response carries `admin: true` when the caller is on `ADMIN_EMAILS` — the page
+uses that to show or hide the reset button. It is a UI hint only: `DELETE`
+re-checks the caller independently, so forging the flag in the browser buys
+nothing.
+
+For rolling-deploy compatibility, authenticated requests that still include
+`limit=<n>` receive the original limited `scores` list until older cached pages
+disappear.
 
 Because the button follows `ADMIN_EMAILS`, an instructor holding only
 `ADMIN_TOKEN` will not see it. That path still works from the command line:
@@ -138,8 +145,8 @@ curl -s https://YOUR-SERVICE.up.railway.app/api/health
 ```
 
 `{"ok":true,"auth":true,"domains":["nyu.edu"]}` means Postgres connected and the
-client ID registered. A `/api/scores` call without a token should return a 401 —
-that is the system working, not a fault.
+client ID registered. A `/api/scores?board=fall-2026` call without a token should
+return the public top 10 with no personalized context.
 
 If Postgres will not connect, it is usually Railway's private network being
 IPv6-only. Switch `DATABASE_URL` to `${{Postgres.DATABASE_PUBLIC_URL}}` and set
@@ -167,10 +174,11 @@ authorized origins include that address.
   changed is that every score is now tied to a verified school account, so it is
   attributable rather than anonymous. Closing the gap properly means moving the
   simulation server-side, which is a much larger change than it sounds.
-- **This now stores student data** — email addresses tied to performance. Treat
-  the board as an education record: the API requires sign-in even to read it,
-  responses omit emails, and you should drop old boards rather than let them
-  accumulate. Check your institution's guidance before making a board public.
+- **This now stores student data** — email addresses tied to performance. The
+  public response exposes display names and top scores but never emails or
+  Google ids; personalized ranking context still requires a verified school
+  account. Drop old boards rather than letting them accumulate, and confirm the
+  public display-name policy against your institution's guidance.
 - **Bump `BOARD_ID` in `index.html` each term.** New cohort, clean board, last
   term's data still intact. Boards are created implicitly on first write.
 - **Rate limits are per IP and per route**, in memory. A class usually shares one
