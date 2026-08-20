@@ -85,6 +85,9 @@ body{
 .intro-flow{max-width:960px;margin:0 auto}
 .intro-section{margin-top:2rem}
 .intro-section:first-child{margin-top:0}
+/* right column: sign-in first, then the board. Stacked on mobile it lands in the
+   same reading order it had when both lived in the main flow. */
+.intro-side{display:grid;gap:2rem;min-width:0}
 .intro-leaderboard{min-width:0}
 .intro-leaderboard .lb-card{margin-bottom:0}
 .intro-lb-lead{font-size:12.5px;line-height:1.5;color:var(--ink-2);margin:-.25rem 0 .8rem}
@@ -112,7 +115,7 @@ body{
 @media(min-width:980px){
   .intro-layout{grid-template-columns:minmax(0,1fr) 350px;align-items:start;gap:1.25rem}
   .intro-flow{max-width:none}
-  .intro-leaderboard{position:sticky;top:1rem}
+  .intro-side{position:sticky;top:1rem;gap:1.25rem}
   .howto{grid-template-columns:repeat(4,1fr)}
 }
 
@@ -145,6 +148,7 @@ body{
 .unlock{padding:.9rem 1.15rem;margin-bottom:1rem;background:var(--violet-tint);border:1px solid var(--violet-line);border-radius:var(--radius)}
 .unlock .kicker{color:var(--violet);margin-bottom:.3rem}
 .unlock p{font-size:13px;line-height:1.55}
+.unlock p+p{margin-top:.6rem}
 
 /* decision card */
 .decision{padding:1.15rem 1.25rem;margin-bottom:1rem}
@@ -296,6 +300,35 @@ details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
 
 .foot{text-align:center;font-size:11.5px;color:var(--ink-3);padding:2rem 1rem;letter-spacing:.04em}
 
+/* ---------- unlock modal ---------- */
+.modal-backdrop{
+  position:fixed;inset:0;z-index:100;display:none;
+  background:rgba(36,28,53,.55);
+  padding:1.25rem;overflow-y:auto;
+  align-items:center;justify-content:center;
+}
+.modal-backdrop.on{display:flex;animation:fadeIn .18s ease-out}
+.modal{
+  background:var(--card);border-radius:var(--radius);
+  box-shadow:0 12px 40px rgba(36,28,53,.28);
+  max-width:520px;width:100%;margin:auto;
+  overflow:hidden;animation:riseIn .22s ease-out;
+}
+.modal-head{background:var(--violet);color:#fff;padding:1.1rem 1.5rem}
+.modal-head .kicker{color:rgba(255,255,255,.75);margin-bottom:.2rem}
+.modal-head h2{font-size:20px;font-weight:700;line-height:1.25}
+.modal-body{padding:1.25rem 1.5rem 1.5rem}
+.modal-tool{padding:.85rem 1rem;background:var(--violet-tint);border:1px solid var(--violet-line);border-radius:10px}
+.modal-tool+.modal-tool{margin-top:.7rem}
+.modal-tool h3{font-size:14px;font-weight:700;color:var(--violet);margin-bottom:.25rem}
+.modal-tool p{font-size:13px;line-height:1.55;color:var(--ink-2)}
+.modal-note{font-size:13px;line-height:1.55;color:var(--ink-2);margin-top:.9rem}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes riseIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){
+  .modal-backdrop.on,.modal{animation:none}
+}
+
 @media(max-width:560px){
   .reference-strip{padding:.65rem .75rem}
   .reference-values{grid-template-columns:repeat(3,1fr)}
@@ -311,6 +344,10 @@ details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
   .order-cost{margin-left:0}
   .game-tag{display:none}
   .step span.slabel{display:none}
+  .modal-backdrop{padding:.75rem}
+  .modal-head{padding:1rem 1.15rem}
+  .modal-head h2{font-size:18px}
+  .modal-body{padding:1.1rem 1.15rem 1.25rem}
 }
 </style>
 </head>
@@ -372,7 +409,10 @@ details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
       </div>
     </section>
 
-    <section class="intro-section" aria-label="Start the game">
+  </div>
+
+  <aside class="intro-side">
+    <section class="intro-start" aria-label="Start the game">
       <div class="card name-panel">
         <div id="signin-panel" style="display:none">
           <p class="signin-lead">Sign in with your NYU Google account to join the class leaderboard.</p>
@@ -386,15 +426,15 @@ details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
         </div>
       </div>
     </section>
-  </div>
 
-  <aside class="intro-leaderboard" aria-labelledby="intro-lb-heading">
-    <div class="card lb-card">
-      <h2 id="intro-lb-heading">Class leaderboard</h2>
-      <p class="intro-lb-lead">See the scores to beat, then put your strategy to the test.</p>
-      <div id="intro-lb-list"><p style="font-size:13px;color:var(--ink-3)">Loading scores…</p></div>
-      <p class="lb-status" id="intro-lb-status"></p>
-    </div>
+    <section class="intro-leaderboard" aria-labelledby="intro-lb-heading">
+      <div class="card lb-card">
+        <h2 id="intro-lb-heading">Class leaderboard</h2>
+        <p class="intro-lb-lead">See the scores to beat, then put your strategy to the test.</p>
+        <div id="intro-lb-list"><p style="font-size:13px;color:var(--ink-3)">Loading scores…</p></div>
+        <p class="lb-status" id="intro-lb-status"></p>
+      </div>
+    </section>
   </aside>
   </div>
 </section>
@@ -432,7 +472,8 @@ details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
 
   <div class="unlock" id="unlock" style="display:none">
     <div class="kicker">New this quarter — working-capital tools</div>
-    <p><strong>Credit sales:</strong> let customers pay one quarter later. Credit sales will increase demand by 50%, but you collect no cash from sales this quarter. <strong>Supplier credit:</strong> lets you order now and pay <em>next</em> quarter, for a $2-per-unit fee. This lets you stock more than your cash allows. The year-end surge is coming; plan your working capital.</p>
+    <p><strong>Credit sales:</strong> let customers pay one quarter later. Credit sales will increase demand by 50%, but you collect no cash from sales this quarter.</p>
+    <p><strong>Supplier credit:</strong> lets you order now and pay <em>next</em> quarter, for a $2-per-unit fee. This lets you stock more than your cash allows. The year-end surge is coming; plan your working capital.</p>
   </div>
 
   <div class="card decision">
@@ -626,6 +667,28 @@ details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
 
 </main>
 
+<!-- ============ Q3 UNLOCK MODAL ============ -->
+<div class="modal-backdrop" id="unlock-modal" role="dialog" aria-modal="true" aria-labelledby="unlock-modal-title" hidden>
+  <div class="modal">
+    <div class="modal-head">
+      <div class="kicker">New this quarter</div>
+      <h2 id="unlock-modal-title">Two working-capital tools just unlocked</h2>
+    </div>
+    <div class="modal-body">
+      <div class="modal-tool">
+        <h3>Credit sales</h3>
+        <p>Let customers pay one quarter later. Demand rises by 50%, but you collect <strong>no cash</strong> from this quarter's sales until next quarter.</p>
+      </div>
+      <div class="modal-tool">
+        <h3>Supplier credit</h3>
+        <p>Order now and pay <em>next</em> quarter, for a $2-per-unit fee. This lets you stock more than your cash allows — but the full bill comes due next quarter.</p>
+      </div>
+      <p class="modal-note">The year-end surge is coming. Plan your working capital.</p>
+      <button class="btn btn-primary" id="unlock-modal-close">Got it — let's trade</button>
+    </div>
+  </div>
+</div>
+
 <footer class="foot">NYU Stern School of Business · Cash &amp; Carry — a profit-vs-cash simulation</footer>
 
 <script>
@@ -683,6 +746,7 @@ function newGame(name){
   S={
     name, quarter:1, cash:START_CASH, inventory:0, ar:0, ap:0,
     cumNI:0, stars:0, bust:false, bustAtClose:false, close:null, history:[],
+    unlockSeen:false,
     demands:TIERS.map(t=>randInt(t.lo,t.hi))
   };
 }
@@ -897,7 +961,33 @@ function renderDecision(){
     saveScore();
     showScreen('bust');
   }
+
+  // the two working-capital tools arrive in Q3 — make players acknowledge them
+  // before they can touch the order slider, rather than trusting the sidebar note
+  if(q===3&&!S.unlockSeen&&!S.bust){S.unlockSeen=true;openUnlock();}
 }
+
+/* The unlock modal has exactly one control, so "trapping" focus means parking it
+   on that button and swallowing Tab. Escape is deliberately not a dismissal:
+   the point is that the player reads the tools and clicks through. */
+function openUnlock(){
+  const m=$('unlock-modal');
+  m.hidden=false;
+  m.classList.add('on');
+  document.body.style.overflow='hidden';
+  $('unlock-modal-close').focus();
+}
+function closeUnlock(){
+  const m=$('unlock-modal');
+  m.classList.remove('on');
+  m.hidden=true;
+  document.body.style.overflow='';
+  $('sl-buy').focus();
+}
+$('unlock-modal-close').addEventListener('click',closeUnlock);
+$('unlock-modal').addEventListener('keydown',e=>{
+  if(e.key==='Tab'){e.preventDefault();$('unlock-modal-close').focus();}
+});
 
 function bestPossibleEnd(){
   const q=S.quarter, t=TIERS[q-1], fin=q===QUARTERS;
