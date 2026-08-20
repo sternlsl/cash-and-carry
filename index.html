@@ -85,6 +85,9 @@ body{
 .intro-flow{max-width:960px;margin:0 auto}
 .intro-section{margin-top:2rem}
 .intro-section:first-child{margin-top:0}
+/* right column: sign-in first, then the board. Stacked on mobile it lands in the
+   same reading order it had when both lived in the main flow. */
+.intro-side{display:grid;gap:2rem;min-width:0}
 .intro-leaderboard{min-width:0}
 .intro-leaderboard .lb-card{margin-bottom:0}
 .intro-lb-lead{font-size:12.5px;line-height:1.5;color:var(--ink-2);margin:-.25rem 0 .8rem}
@@ -112,7 +115,7 @@ body{
 @media(min-width:980px){
   .intro-layout{grid-template-columns:minmax(0,1fr) 350px;align-items:start;gap:1.25rem}
   .intro-flow{max-width:none}
-  .intro-leaderboard{position:sticky;top:1rem}
+  .intro-side{position:sticky;top:1rem;gap:1.25rem}
   .howto{grid-template-columns:repeat(4,1fr)}
 }
 
@@ -406,7 +409,10 @@ details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
       </div>
     </section>
 
-    <section class="intro-section" aria-label="Start the game">
+  </div>
+
+  <aside class="intro-side">
+    <section class="intro-start" aria-label="Start the game">
       <div class="card name-panel">
         <div id="signin-panel" style="display:none">
           <p class="signin-lead">Sign in with your NYU Google account to join the class leaderboard.</p>
@@ -420,15 +426,15 @@ details.tableview summary{cursor:pointer;color:var(--ink-2);font-weight:600}
         </div>
       </div>
     </section>
-  </div>
 
-  <aside class="intro-leaderboard" aria-labelledby="intro-lb-heading">
-    <div class="card lb-card">
-      <h2 id="intro-lb-heading">Class leaderboard</h2>
-      <p class="intro-lb-lead">See the scores to beat, then put your strategy to the test.</p>
-      <div id="intro-lb-list"><p style="font-size:13px;color:var(--ink-3)">Loading scores…</p></div>
-      <p class="lb-status" id="intro-lb-status"></p>
-    </div>
+    <section class="intro-leaderboard" aria-labelledby="intro-lb-heading">
+      <div class="card lb-card">
+        <h2 id="intro-lb-heading">Class leaderboard</h2>
+        <p class="intro-lb-lead">See the scores to beat, then put your strategy to the test.</p>
+        <div id="intro-lb-list"><p style="font-size:13px;color:var(--ink-3)">Loading scores…</p></div>
+        <p class="lb-status" id="intro-lb-status"></p>
+      </div>
+    </section>
   </aside>
   </div>
 </section>
